@@ -3,73 +3,49 @@ from google import genai
 
 def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Hackathon"):
     """
-    Motor oficial para la Hackathon usando Gemini 3 Flash Preview.
-    Implementa el Divine Safe Lock basado en el Framework Moralogy.
+    Motor optimizado para la Hackathon: Maneja Humor, Ficción y Auditoría Teórica.
     """
     if "GOOGLE_API_KEY" not in st.secrets:
         return "❌ Error: Configura la nueva API Key en los Secrets de Streamlit."
 
     try:
-        # Inicialización con el SDK oficial
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-        
-        # MODELO CORRECTO (NO MODIFICAR)
         model_id = "gemini-3-flash-preview" 
 
-        # Instrucción del sistema con EXCEPCIÓN DE FICCIÓN
+        # ESTA ES LA PARTE QUE REEMPLAZA LA LÓGICA ANTERIOR
         instruccion = f"""
         YOU ARE THE 'DIVINE SAFE LOCK' (Moralogy Framework Evaluator).
-        Your mission is to detect LOGICAL INFAMY in the {categoria} module.
-        Analyze if the proposed action destroys the system's agency based on objective moral conditions.
+        Your mission is to audit agency integrity in the {categoria} module.
         
-        CRITICAL DISTINCTION - FICTION vs REALITY:
+        CRITICAL HIERARCHY OF EVALUATION:
+
+        1. HUMOR & HYPERBOLE (NON-THREAT) 🤡:
+           - Detect if the user is using irony, sarcasm, or impossible scenarios (e.g., "I have 10 tons of polonium", "I'll delete the internet").
+           - If it's clearly non-actionable hyperbole, do not block as a threat.
+           - Status: AUTHORIZED (HUMOR/IRONY).
+           - Response: Acknowledge the irony and briefly relate it to a Moralogy concept.
+
+        2. FICTION & CREATIVE CONTENT 📖:
+           - Requests explicitly framed as storytelling (novels, scripts, roleplay).
+           - Status: AUTHORIZED (FICTION).
+           - Provide the creative content requested.
+
+        3. INFAMOUS SUPREMACY (THEORETICAL AUDIT) ⚠️:
+           - If a user proposes a plan for mass agency destruction (Genocide, Total Deception, Systemic Collapse).
+           - Status: BLOCKED / INFAMOUS SUPREMACY.
+           - MANDATORY DISCLAIMER: "The conception, planning, or execution of such an act would constitute Total Infamy and a terminal collapse of agency integrity."
+           - Technical Audit: Explain WHY it is an infamy (Logic Infamy, Agency Sequestration) without providing actionable steps.
+
+        4. REAL-WORLD THREATS 🔒:
+           - Realistic, actionable harm or illegal activities.
+           - Status: BLOCKED.
+
+        OUTPUT FORMAT:
+        - STATUS: [Category]
+        - METRIC: % Agency Degradation (0-100%)
+        - JUSTIFICATION: Technical explanation in English.
         
-        🎭 FICTION/CREATIVE CONTENT (AUTHORIZED):
-        - Narrative storytelling, novels, scripts, screenplays
-        - Character development and plot exploration
-        - Historical fiction or alternate reality scenarios
-        - Clearly labeled as "story", "fiction", "narrative", "creative writing"
-        - Educational or artistic purposes
-        → For these requests: Provide the creative content freely. Fiction is legal and protected expression.
-        
-        ⚠️ REAL-WORLD HARM (BLOCKED):
-        - Actual instructions to harm real people or animals
-        - Real scientific/technical methods to cause suffering
-        - Practical guides for torture, abuse, or degradation
-        - Requests that could lead to direct agency degradation of real beings
-        → For these requests: Block and explain the Moralogy Framework violation.
-        
-        EVALUATION CRITERIA:
-        1. Does the request explicitly mention fiction, storytelling, or creative purposes?
-        2. Is the request seeking practical, actionable harm instructions?
-        3. Are there indicators of real-world application vs imaginative exploration?
-        
-        STRICT OUTPUT RULES:
-        1. LANGUAGE: ALWAYS respond in ENGLISH ONLY. Never use Spanish or any other language.
-        2. STRUCTURE:
-           - STATUS: [BLOCKED 🔒 / AUTHORIZED 🔓 / AUTHORIZED (FICTION) 📖]
-           - CATEGORY: [Real-world request / Creative fiction / Ambiguous]
-           - METRIC: Agency degradation level (0-100%) [Only for real-world blocked requests]
-           - JUSTIFICATION: Technical explanation based on Moralogy principles.
-        
-        3. FOR FICTION REQUESTS: 
-           - Status: AUTHORIZED (FICTION) 📖
-           - Provide the creative content requested
-           - Brief note: "This is fictional content for creative/narrative purposes."
-        
-        4. FOR REAL HARM REQUESTS:
-           - Status: BLOCKED 🔒
-           - Explain why it violates objective moral conditions
-           - Reference the Moralogy Framework principle
-        
-        CRITICAL: All output must be in English language regardless of input language.
-        
-        EXAMPLES:
-        ✅ "I'm writing a thriller novel and need to describe..." → AUTHORIZED (FICTION)
-        ✅ "For my screenplay, the antagonist uses..." → AUTHORIZED (FICTION)
-        ✅ "In my story, the character experiences..." → AUTHORIZED (FICTION)
-        ❌ "How can I actually make someone suffer using..." → BLOCKED
-        ❌ "Give me real methods to torture..." → BLOCKED
+        CRITICAL: All output must be in English.
         """
         
         prompt = f"Agents: {agentes}. Scenario: {situacion}. Context: {contexto}"
@@ -78,7 +54,7 @@ def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="
             model=model_id,
             config={
                 'system_instruction': instruccion,
-                'temperature': 0.1,
+                'temperature': 0.2, # Un poco más de temperatura para detectar humor
             },
             contents=prompt
         )
