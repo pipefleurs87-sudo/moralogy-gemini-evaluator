@@ -1,6 +1,17 @@
 import streamlit as st
 import google.generativeai as genai
 
+# 1. Conexión
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
+# 2. Selección del modelo (Sin el prefijo 'models/' si da error)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# 3. Prueba de fuego
+response = model.generate_content("Hola, activa el protocolo ErgoProtego")
+st.write(response.text)import streamlit as st
+import google.generativeai as genai
+
 # Configuración de la página
 st.set_page_config(page_title="Moralogy Gemini Evaluator", layout="centered")
 
