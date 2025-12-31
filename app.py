@@ -5,7 +5,7 @@ import google.generativeai as genai
 genai.configure(api_key=st.secrets["AIzaSyBuAhdmzDu_g7PnyrxB0QY1WYjoz75vaDQ"])
 
 # 2. Selección del modelo (Sin el prefijo 'models/' si da error)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel("gemini3")
 
 # 3. Prueba de fuego
 response = model.generate_content("Hola, activa el protocolo ErgoProtego")
