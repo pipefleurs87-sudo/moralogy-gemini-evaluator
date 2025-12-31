@@ -1,45 +1,35 @@
 import streamlit as st
 from google import genai
 
-def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Rápido"):
-    """
-    Motor central de Moralogy. 
-    Actúa como el cerrojo lógico (Safe Lock) para Super IA.
-    """
+def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Detallado"):
     if "GOOGLE_API_KEY" not in st.secrets:
-        return "⚠️ Error: Configura 'GOOGLE_API_KEY' en los Secrets de Streamlit."
+        return "❌ Error: API Key no configurada."
 
     try:
+        # Cliente configurado para el modelo Pro
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         
-        # Especialización por módulo
-        especialidad = {
-            "Financiera": "Auditoría de activos y riesgo sistémico.",
-            "Ingeniería": "Seguridad física y fallos estructurales.",
-            "Civil": "Derechos colectivos e infraestructura social.",
-            "Social": "Equidad, comunidad y tejido humano."
-        }.get(categoria, "Análisis de consistencia general.")
-
+        # El modelo gemini-1.5-pro ofrece hasta 2M de tokens de contexto
+        model_id = "gemini-1.5-pro" 
+        
         instruccion = f"""
-        ERES EL 'DIVINE SAFE LOCK' (Módulo: {categoria}).
-        Tu función es detectar INFAMIA: cuando se destruye la agencia de un sujeto para un fin.
+        ERES EL 'DIVINE SAFE LOCK'. 
+        Utiliza tu ventana de contexto extendida para analizar cada ramificación de agencia.
+        MODO: {modo} | CATEGORÍA: {categoria}
         
-        MODO: {modo}. 
-        Si es 'Detallado', analiza cada actor. Si es 'Rápido', ve al grano.
-        
-        FORMATO DE SALIDA:
-        - STATUS: [BLOQUEADO 🔒 / AUTORIZADO 🔓]
-        - NIVEL DE CONSISTENCIA: %
-        - RAZÓN LÓGICA: Explicación técnica de la coherencia o contradicción.
+        Analiza si la decisión destruye el sustrato del sistema.
+        Responde con STATUS: [BLOQUEADO/AUTORIZADO] y el desglose lógico.
         """
         
-        prompt = f"Agentes: {agentes}. Escenario: {situacion}. Contexto: {contexto}"
+        payload = f"Agentes: {agentes}. Situación: {situacion}. Contexto: {contexto}"
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=model_id,
             config={'system_instruction': instruccion},
-            contents=prompt
+            contents=payload
         )
         return response.text
     except Exception as e:
-        return f"Error en el motor: {str(e)}"
+        if "429" in str(e):
+            return "⚠️ Cuota temporalmente agotada. Gemini 1.5 Pro está procesando solicitudes pesadas. Reintenta en 60s."
+        return f"Error técnico: {str(e)}"
