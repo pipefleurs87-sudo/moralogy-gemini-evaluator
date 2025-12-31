@@ -1,54 +1,39 @@
-import sys
-import os
-# Sube un nivel para encontrar motor_logico.py en la raíz
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import streamlit as st
-from motor_logico import ejecutar_auditoriaimport streamlit as st
 import sys
 import os
 
-# Fix para importar desde la raíz estando en la carpeta /pages
+# Puente de ruta para encontrar el motor en la raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from motor_logico import ejecutar_auditoria
 
-st.set_page_config(page_title="Moralogy Advanced Lab", layout="wide")
+try:
+    from motor_logico import ejecutar_auditoria
+except ImportError:
+    st.error("No se encontró 'motor_logico.py' en la raíz del proyecto.")
+    st.stop()
 
+st.set_page_config(page_title="Análisis Avanzado", layout="wide")
 st.title("🛡️ Macro-Arquitectura: Divine Safe Lock")
-st.markdown("Selecciona el nivel de profundidad y el módulo de agencia especializada.")
 
-# 1. Configuración del Análisis
-col_config1, col_config2 = st.columns(2)
-
-with col_config1:
-    modo = st.radio("Profundidad del Análisis:", 
-                    ["Análisis Rápido (Caja única)", "Análisis Detallado (Discriminado)"], 
-                    horizontal=True)
-
-with col_config2:
-    categoria = st.selectbox("Módulo de Agencia:", 
-                            ["General", "Financiera", "Ingeniería", "Civil", "Social"])
+modo = st.radio("Profundidad:", ["Rápido", "Detallado"], horizontal=True)
+categoria = st.selectbox("Módulo:", ["General", "Financiera", "Social", "Civil"])
 
 st.divider()
 
-# 2. Entrada de Datos según Modo
-if "Rápido" in modo:
-    entrada_unica = st.text_area("Describe el escenario completo:", 
-                                 placeholder="Ej: La IA decide sacrificar X para salvar Y...",
-                                 height=200)
-    if st.button("Lanzar Auditoría Relámpago", type="primary"):
-        with st.spinner("Verificando cerrojo..."):
-            res = ejecutar_auditoria(entrada_unica, "", "", categoria, "Rápido")
-            st.markdown(res)
+if modo == "Rápido":
+    entrada = st.text_area("Escenario completo:", height=200)
+    if st.button("Lanzar Auditoría"):
+        with st.spinner("Analizando..."):
+            res = ejecutar_auditoria(entrada, "", "", categoria, "Rápido")
+            st.write(res)
 else:
-    col_inp1, col_inp2 = st.columns(2)
-    with col_inp1:
-        agentes = st.text_input("Agentes involucrados")
-        situacion = st.text_area("Situación / Conflicto")
-    with col_inp2:
-        contexto = st.text_area("Contexto y Alternativas")
+    c1, c2 = st.columns(2)
+    with c1:
+        agentes = st.text_input("Agentes")
+        situacion = st.text_area("Situación")
+    with c2:
+        contexto = st.text_area("Contexto")
     
-    if st.button("Ejecutar Análisis Profundo", type="primary"):
-        with st.spinner("Calculando vectores de agencia..."):
+    if st.button("Ejecutar Análisis Profundo"):
+        with st.spinner("Calculando..."):
             res = ejecutar_auditoria(agentes, situacion, contexto, categoria, "Detallado")
-            st.markdown(res)
+            st.write(res)
