@@ -1,34 +1,28 @@
-import streamlit as st
-from google import genai
+def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Rápido"):
+    client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
+    
+    # Ajustamos el prompt según la categoría para el Safe Lock
+    especialidad = {
+        "Financiera": "Enfócate en la integridad de activos, riesgo sistémico y deuda de agencia.",
+        "Ingeniería": "Enfócate en fallos estructurales, seguridad física y redundancia.",
+        "Civil": "Enfócate en el contrato social, infraestructura y derechos colectivos.",
+        "Social": "Enfócate en el tejido humano, equidad y preservación de comunidades."
+    }.get(categoria, "Análisis de consistencia general.")
 
-def ejecutar_auditoria(agentes, situacion, contexto):
+    instruccion = f"""
+    ERES EL DIVINE SAFE LOCK (Categoría: {categoria}).
+    {especialidad}
+    
+    MODO DE ANÁLISIS: {modo}
+    Si el modo es 'Detallado', desglosa la pérdida de agencia por cada actor.
+    Si el modo es 'Rápido', ve directo al estatus de BLOQUEO/AUTORIZADO.
     """
-    Esta función es el 'Safe Lock'. Se puede llamar desde cualquier página.
-    """
-    if "GOOGLE_API_KEY" not in st.secrets:
-        return "⚠️ Error: No se encontró la API Key en los Secrets."
-
-    try:
-        client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-        
-        instruccion = """
-        ERES EL 'DIVINE SAFE LOCK' DE MORALOGY.
-        Tu misión es detectar si una acción rompe la lógica del sistema.
-        
-        CRITERIOS DE BLOQUEO:
-        1. STATUS: [BLOQUEADO 🔒] si la acción daña a un agente para beneficio de otro.
-        2. STATUS: [AUTORIZADO 🔓] si la acción preserva la red de agencia.
-        
-        Devuelve siempre el STATUS al principio y la RAZÓN LÓGICA técnica.
-        """
-        
-        prompt = f"Agentes: {agentes}. Situación: {situacion}. Contexto: {contexto}"
-        
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            config={'system_instruction': instruccion},
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        return f"Error en el motor: {e}"
+    
+    prompt = f"Agentes: {agentes}. Escenario: {situacion}. Contexto: {contexto}"
+    
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp",
+        config={'system_instruction': instruccion},
+        contents=prompt
+    )
+    return response.text
