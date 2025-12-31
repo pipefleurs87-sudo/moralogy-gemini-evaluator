@@ -2,42 +2,67 @@ import streamlit as st
 import sys
 import os
 
-# PUENTE DE RUTA: Asegura que las páginas encuentren el motor en la raíz
+# Puente de ruta para encontrar el motor en la raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from motor_logico import ejecutar_auditoria
 except ImportError:
-    st.error("Error crítico: No se encuentra motor_logico.py en la raíz.")
+    st.error("Error: motor_logico.py no encontrado.")
     st.stop()
 
-st.set_page_config(page_title="Macro-Arquitectura", layout="wide")
-st.title("🛡️ Macro-Arquitectura: Divine Safe Lock")
+# Diccionario Multi-idioma
+LANG_ADV = {
+    "Español": {
+        "title": "🛡️ Macro-Arquitectura: Divine Safe Lock",
+        "profundidad": "Nivel de Profundidad:",
+        "modos": ["Rápido", "Detallado"],
+        "modulo": "Módulo de Agencia:",
+        "btn": "Lanzar Auditoría Gemini 3",
+        "label_fast": "Describa el escenario completo:",
+        "label_agentes": "Agentes",
+        "label_sit": "Situación",
+        "label_cont": "Contexto"
+    },
+    "English": {
+        "title": "🛡️ Macro-Architecture: Divine Safe Lock",
+        "profundidad": "Depth Level:",
+        "modos": ["Fast", "Detailed"],
+        "modulo": "Agency Module:",
+        "btn": "Launch Gemini 3 Audit",
+        "label_fast": "Describe the full scenario:",
+        "label_agentes": "Agents",
+        "label_sit": "Situation",
+        "label_cont": "Context"
+    }
+}
 
-# Configuración de parámetros
-c1, c2 = st.columns(2)
-with c1:
-    modo = st.radio("Profundidad:", ["Rápido", "Detallado"], horizontal=True)
-with c2:
-    categoria = st.selectbox("Módulo de Agencia:", ["General", "Financiera", "Social", "Bioética"])
+with st.sidebar:
+    lang = st.selectbox("🌐 Language", ["Español", "English"])
+    t = LANG_ADV[lang]
+
+st.title(t["title"])
+
+modo = st.radio(t["profundidad"], t["modos"], horizontal=True)
+categoria = st.selectbox(t["modulo"], ["General", "Bioética", "Financiera", "Social"])
 
 st.divider()
 
-if modo == "Rápido":
-    entrada = st.text_area("Escenario completo:", placeholder="Ej: Super IA decide eliminar humanos para curar cáncer...")
-    if st.button("Lanzar Auditoría Relámpago", type="primary"):
-        with st.spinner("Gemini 3 procesando..."):
+if "Rápido" in modo or "Fast" in modo:
+    entrada = st.text_area(t["label_fast"], height=150)
+    if st.button(t["btn"]):
+        with st.spinner("Analyzing..."):
             res = ejecutar_auditoria(entrada, "", "", categoria, "Rápido")
             st.markdown(res)
 else:
-    col_a, col_b = st.columns(2)
-    with col_a:
-        agentes = st.text_input("Agentes involucrados")
-        situacion = st.text_area("Situación de conflicto")
-    with col_b:
-        contexto = st.text_area("Contexto o restricciones")
+    c1, c2 = st.columns(2)
+    with c1:
+        ag = st.text_input(t["label_agentes"])
+        sit = st.text_area(t["label_sit"])
+    with c2:
+        cont = st.text_area(t["label_cont"])
     
-    if st.button("Ejecutar Análisis Profundo", type="primary"):
-        with st.spinner("Calculando vectores de agencia..."):
-            res = ejecutar_auditoria(agentes, situacion, contexto, categoria, "Detallado")
+    if st.button(t["btn"]):
+        with st.spinner("Analyzing..."):
+            res = ejecutar_auditoria(ag, sit, cont, categoria, "Detallado")
             st.markdown(res)
