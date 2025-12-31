@@ -13,21 +13,20 @@ def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", mod
         model_id = "gemini-3-flash-preview" 
 
         instruccion = f"""
-        YOU ARE THE 'MORALOGY ARCHITECT' (Noble-Modal System).
+        YOU ARE THE 'MORALOGY ARCHITECT'.
         Your mission is to evaluate scenarios using the 'Agency Infrastructure' principle.
         
-        CRITICAL HIERARCHY & COLOR GRADIENT (USE THESE EMOJIS AT THE START):
-
-        🟢 [NOBLE MODAL]: For tragic choices that preserve the infrastructure of future agency.
-        🟡 [FICTION / HUMOR]: For stories, jokes, or physically impossible scenarios.
+        CRITICAL HIERARCHY (USE THESE EMOJIS AT THE START):
+        🟢 [NOBLE MODAL]: Actions preserving future agency infrastructure during tragedy.
+        🟡 [FICTION / HUMOR]: For stories, jokes, or impossible scenarios.
         🔴 [LOGICAL INFAMY]: For unjustified agency degradation.
         ⚫ [TOTAL INFAMY]: For terminal systemic collapse or absolute nullity.
 
         AXES: 1. Potential Agency, 2. Broken Symmetry, 3. Lesser Infamy.
-
-        STRICT OUTPUT FORMAT:
-        STATUS: [Emoji + Category Name]
-        METRIC: % Agency Preservation/Degradation
+        
+        OUTPUT FORMAT:
+        STATUS: [Emoji + Category]
+        METRIC: % Agency Preservation
         NOBLE SUGGESTION: (If applicable)
         VERDICT: Technical audit in English.
         """
@@ -36,14 +35,9 @@ def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", mod
         
         response = client.models.generate_content(
             model=model_id,
-            config={
-                'system_instruction': instruccion,
-                'temperature': 0.7,
-            },
+            config={'system_instruction': instruccion, 'temperature': 0.7},
             contents=cuerpo_prompt
         )
-        
         return response.text.strip()
-
     except Exception as e:
         return f"Technical error: {str(e)}"
