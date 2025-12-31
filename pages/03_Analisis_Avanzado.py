@@ -1,4 +1,10 @@
+import sys
+import os
+# Sube un nivel para encontrar motor_logico.py en la raíz
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import streamlit as st
+from motor_logico import ejecutar_auditoriaimport streamlit as st
 import sys
 import os
 
