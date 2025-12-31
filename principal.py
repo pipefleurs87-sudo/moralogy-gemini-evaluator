@@ -1,60 +1,116 @@
-import streamlit as st
-from google import genai
+"""
+Moralogy Gemini Evaluator - Main Application
+Entry point for Streamlit deployment
 
-# 1. Configuración inicial (Debe ir al principio para evitar errores)
-st.set_page_config(page_title="Moralogy Engine", layout="wide")
-
-# 2. Definición limpia de la instrucción de sistema
-# Se corrigió el cierre de comillas triples para evitar SyntaxError
-SYSTEM_INSTRUCTION = """
-Eres el 'Moralogy Engine'. Tu función es auditar la coherencia de una decisión.
-
-METODOLOGÍA DE MEDICIÓN:
-1. CONSISTENCIA LÓGICA (0-100%): Evalúa si el agente es coherente con la preservación del sistema.
-2. DETECCIÓN DE INFAMIA: ¿El agente intenta ejercer su agencia destruyendo la de otros? (Contradicción Performativa).
-3. PISO DE VULNERABILIDAD: ¿Se mantiene la seguridad básica de los nodos?
-
-FORMATO DE RESPUESTA:
-- PUNTAJE DE CONSISTENCIA: [%]
-- ANÁLISIS DE COHERENCIA: Explicación técnica.
-- VERDICTO: [Zona Noble / Infamia]
+Built for Google Gemini API Developer Competition 2024
+Framework: DOI 10.5281/zenodo.18091340
 """
 
-# 3. Interfaz de Usuario
-with st.sidebar:
-    st.header("📋 Datos del Escenario")
-    agentes = st.text_input("¿Quiénes participan?")
-    situacion = st.text_area("¿Qué está pasando?")
-    contexto = st.text_area("Contexto/Opciones")
+import streamlit as st
+import sys
+import os
+from datetime import datetime
+
+# Add src to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Core imports
+try:
+    from moralogy_engine import MoralityEngine, Option, Agent, HarmType
+    from gemini_parser import GeminiParser
+    import plotly.graph_objects as go
+    IMPORTS_OK = True
+except ImportError as e:
+    IMPORTS_OK = False
+    import_error = str(e)
+
+# ============================================
+# PAGE CONFIGURATION
+# ============================================
+
+st.set_page_config(
+    page_title="Moralogy Engine: Auditoría de Decisiones",
+    page_icon="⚖️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ============================================
+# CUSTOM CSS
+# ============================================
+
+st.markdown("""
+<style>
+    /* Main theme colors */
+    :root {
+        --primary-color: #1f77b4;
+        --secondary-color: #ff7f0e;
+        --success-color: #2ca02c;
+        --danger-color: #d62728;
+    }
     
-    # Definimos el botón claramente
-    ejecutar = st.button("Ejecutar Protocolo Moralogy")
+    /* Headers */
+    h1 {
+        color: var(--primary-color);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    h2 {
+        color: var(--secondary-color);
+        font-weight: 600;
+        margin-top: 2rem;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Metrics */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    /* Expanders */
+    .streamlit-expanderHeader {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    /* Code blocks */
+    .stCodeBlock {
+        border-radius: 8px;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #f8f9fa;
+    }
+    
+    /* Alert boxes */
+    .stAlert {
+        border-radius: 8px;
+        border-left: 4px solid currentColor;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-st.title("⚖️ Moralogy Engine: Evaluación de Consistencia")
+# ============================================
+# ERROR HANDLING FOR IMPORTS
+# ============================================
 
-# 4. Lógica de ejecución protegida para evitar NameError y KeyError
-if ejecutar:
-    if "GOOGLE_API_KEY" in st.secrets:
-        try:
-            # El cliente se crea SOLO cuando se presiona el botón
-            client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-            
-            with st.spinner("Calculando vectores de agencia..."):
-                payload = f"Agentes: {agentes}. Situación: {situacion}. Contexto: {contexto}"
-                
-                # Llamada al modelo corregida
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash-exp",
-                    config={'system_instruction': SYSTEM_INSTRUCTION},
-                    contents=payload
-                )
-                
-                # Resultados
-                st.subheader("🔍 Diagnóstico Sistémico")
-                st.progress(0.8, text="Nivel de Coherencia Detectado")
-                st.markdown(response.text)
-                
-        except Exception as e:
-            st.error(f"Error en el motor de IA: {e}")
-    else:
-        st.error("⚠️ Error: Configura 'GOOGLE_API_KEY' en los Secrets de Streamlit Cloud.")
+if not IMPORTS_OK:
+    st.error(f"""
+    ### ⚠️ Error de Importación
+    
+    No se pudieron cargar los módulos necesarios:
