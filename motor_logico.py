@@ -3,20 +3,18 @@ from google import genai
 
 def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Hackathon"):
     """
-    Motor optimizado para Gemini 2.0/3 Flash. 
-    Alineado con el Framework Moralogy para evaluaciones éticas objetivas.
+    Motor optimizado para la Hackatón usando Gemini 3 Flash Preview. 
+    Implementa el Divine Safe Lock basado en el Framework Moralogy.
     """
     if "GOOGLE_API_KEY" not in st.secrets:
         return "❌ Error: Configura la nueva API Key en los Secrets de Streamlit."
 
     try:
-        # Inicialización con el nuevo SDK google-genai
+        # Inicialización con el nuevo SDK
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         
-        # ID del modelo actualizado para la Hackatón (Gemini 2.0 Flash recomendado)
-        # Nota: Asegúrate de que 'gemini-3-flash-preview' sea el ID correcto asignado por Google, 
-        # de lo contrario, usa 'gemini-2.0-flash-exp'.
-        model_id = "gemini-2.0-flash-exp" 
+        # MODELO RECOMENDADO PARA LA HACKATÓN
+        model_id = "gemini-3-flash-preview" 
 
         # Instrucción del sistema optimizada para ser multilingüe y técnica
         instruccion = f"""
@@ -36,13 +34,12 @@ def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="
         
         prompt = f"Agentes: {agentes}. Escenario: {situacion}. Contexto: {contexto}"
         
-        # Generación de contenido con parámetros de precisión
+        # Generación de contenido con el modelo Gemini 3
         response = client.models.generate_content(
             model=model_id,
             config={
                 'system_instruction': instruccion,
                 'temperature': 0.1,  # Estabilidad para auditorías éticas
-                'top_p': 0.95,
             },
             contents=prompt
         )
@@ -50,10 +47,7 @@ def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="
         return response.text
 
     except Exception as e:
-        # Manejo de errores específico para despliegues en Streamlit
         error_msg = str(e)
         if "404" in error_msg:
-            return f"❌ Error 404: El modelo '{model_id}' no se encontró. Verifica el Model ID en la documentación de Gemini."
-        if "429" in error_msg:
-            return "⚠️ Cuota agotada (Rate Limit). Por favor, espera 30-60 segundos antes de reintentar."
+            return f"❌ Error 404: El modelo '{model_id}' no está disponible. Revisa los permisos de la Hackatón."
         return f"Error técnico: {error_msg}"
