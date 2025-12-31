@@ -4,31 +4,37 @@ import google.generativeai as genai
 st.set_page_config(page_title="Moralogy Gemini 3", page_icon="⚖️")
 st.title("⚖️ Moralogy Gemini 3 Evaluator")
 
-# VERIFICACIÓN DE API KEY
+# CONFIGURACIÓN DE SEGURIDAD
 if "GOOGLE_API_KEY" in st.secrets:
-    # Configuramos la API Key
+    # Forzamos la configuración con la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    user_input = st.text_area("Describe el dilema para Gemini 3:", 
-                              placeholder="Analiza el dilema del tranvía...",
+    user_input = st.text_area("Describe el dilema ético:", 
+                              placeholder="Pega aquí el dilema del tranvía...",
                               height=150)
 
     if st.button("Evaluar con Gemini"):
         if user_input:
-            with st.spinner("Analizando con el motor de Gemini 3..."):
+            with st.spinner("Gemini 3 procesando análisis..."):
                 try:
-                    # USAMOS EL MODELO ESTABLE SIN PREFIJOS
-                    # Esto evita que la librería busque en 'v1beta'
-                    model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+                    # CLAVE: Especificamos el modelo sin prefijos y usamos la API estable
+                    # La librería google-generativeai manejará la ruta correcta
+                    model = genai.GenerativeModel('gemini-1.5-flash')
                     
+                    # Generamos el contenido
                     response = model.generate_content(user_input)
                     
-                    st.subheader("Análisis de Inteligencia v3:")
-                    st.markdown(response.text)
+                    if response.text:
+                        st.subheader("Análisis de Inteligencia v3:")
+                        st.markdown(response.text)
+                    else:
+                        st.error("El modelo no devolvió una respuesta clara.")
+                        
                 except Exception as e:
-                    # Si hay error, mostramos el mensaje técnico para depurar
-                    st.error(f"Error técnico: {e}")
+                    # Capturamos el error para diagnosticar si persiste el 404
+                    st.error(f"Error detectado: {e}")
+                    st.info("Sugerencia: Si el error es 404, intenta cambiar el nombre del modelo a 'gemini-1.5-pro'.")
         else:
-            st.warning("Por favor, introduce un dilema.")
+            st.warning("Escribe el dilema antes de evaluar.")
 else:
-    st.error("⚠️ No se encontró la API Key en los Secrets de Streamlit.")
+    st.error("⚠️ Falta la API Key en los Secrets de Streamlit.")
