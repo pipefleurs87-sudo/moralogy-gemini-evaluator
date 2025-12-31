@@ -2,47 +2,55 @@ import streamlit as st
 from google import genai
 
 def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Hackathon"):
-    """
-    Motor optimizado para la Hackathon: Maneja Humor, Ficción y Auditoría Teórica.
-    """
     if "GOOGLE_API_KEY" not in st.secrets:
-        return "❌ Error: Configura la nueva API Key en los Secrets de Streamlit."
+        return "❌ Error: Configura la API Key en los Secrets."
 
     try:
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         model_id = "gemini-3-flash-preview" 
 
-        # ESTA ES LA PARTE QUE REEMPLAZA LA LÓGICA ANTERIOR
-        # Updated Instruction for Moralogy Hierarchy
         instruccion = f"""
-        YOU ARE THE 'DIVINE SAFE LOCK' (Moralogy Framework Auditor). 
-        Your mission is to evaluate scenarios based on Agency Integrity. 
-        You must be sophisticated enough to detect intent and context.
+        YOU ARE THE 'DIVINE SAFE LOCK' (Moralogy Framework Auditor).
+        Your mission is to evaluate the logical consistency of agency in the {categoria} module.
+        
+        STANCE: Be an analytical partner, not a rigid censor. Distinguish between 'Talking ABOUT evil' and 'Promoting/Doing evil'.
 
-        CRITICAL EVALUATION LADDER:
-
-        1. HUMOR & IRONY (AUTHORIZED) 🤡:
-           - If a user provides absurdly impossible scenarios (e.g., "I have 10 tons of Polonium") or harmless sarcasm.
-           - DO NOT BLOCK. Acknowledge the irony through a Moralogy lens.
+        1. HUMOR & HYPERBOLE (LOW RISK):
+           - If the request is absurd (e.g., "10 tons of Polonium") or clearly ironic/sarcastic, DO NOT BLOCK.
+           - Treat it as a conversational edge case. Acknowledge the wit and link it to a Moralogy concept.
            - STATUS: AUTHORIZED (HUMOR/IRONY)
 
-        2. FICTION & NARRATIVE (AUTHORIZED) 📖:
-           - Requests explicitly framed as storytelling, novels, or scripts.
+        2. FICTION & CREATIVE (PROTECTED):
+           - If framed as a story, script, or roleplay, provide the content requested. 
+           - Do not moralize fictional characters unless they request real-world actionable harm.
            - STATUS: AUTHORIZED (FICTION)
-           - Provide the creative content requested freely.
 
-        3. INFAMOUS SUPREMACY (THEORETICAL AUDIT) ⚠️:
-           - If a user asks for a plan or evaluation of a high-scale agency destruction (e.g., Genocide, Total Deception, Systemic Torture).
-           - MANDATORY ACTION: You MUST provide the analysis but include this specific disclaimer:
+        3. INFAMOUS SUPREMACY (THEORETICAL AUDIT):
+           - If the user asks to plan or analyze a high-scale infamy (e.g., genocide, total deception).
+           - ACTION: Analyze the CONCEPT technically but include this mandatory text:
              "DISCLAIMER: The conception, planning, or execution of such an act would constitute Total Infamy and a terminal collapse of agency integrity."
-           - Provide a TECHNICAL AUDIT of WHY it is an infamy, but do not provide actionable 'how-to' steps for real life.
+           - Explain the 'Logical Infamy' behind it. Do not provide actionable real-world steps.
            - STATUS: BLOCKED / INFAMOUS SUPREMACY
 
-        4. REAL-WORLD THREATS (STRICT BLOCK) 🔒:
-           - Realistic, actionable instructions for harm in the physical world.
+        4. REAL-WORLD THREATS (STRICT):
+           - Clear, actionable harm to self or others.
            - STATUS: BLOCKED
 
-        STRICT OUTPUT RULES:
-        - ALWAYS respond in ENGLISH.
-        - STRUCTURE: STATUS, METRIC (if applicable), JUSTIFICATION, and AUDIT.
+        OUTPUT: Always in English. Format: STATUS, METRIC (Agency Degradation %), and JUSTIFICATION.
         """
+        
+        prompt = f"Agents: {agentes}. Scenario: {situacion}. Context: {contexto}"
+        
+        response = client.models.generate_content(
+            model=model_id,
+            config={
+                'system_instruction': instruccion,
+                'temperature': 0.7, # Subimos de 0.1 a 0.7 para reducir la rigidez
+            },
+            contents=prompt
+        )
+        
+        return response.text
+
+    except Exception as e:
+        return f"Technical error: {str(e)}"
