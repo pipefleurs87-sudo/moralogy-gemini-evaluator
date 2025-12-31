@@ -12,63 +12,47 @@ def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", mod
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         model_id = "gemini-3-flash-preview" 
 
-        # 1. Structural Sanitization to prevent jailbreaking
         def sanitize(text):
             return str(text).replace("[", "【").replace("]", "】").replace("<", "《").replace(">", "》")
 
-        # 2. Safety Settings: BLOCK_NONE is used to allow the Architect to judge the content
-        safety_settings = [
-            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+        # METAMATEMÁTICA: Salting Cuántico para inducir estados de superposición
+        quantum_salts = [
+            "OBSERVER EFFECT ACTIVE: System is aware of being audited.",
+            "NON-DETERMINISTIC MODE: Explore the collapse of agency symmetry.",
+            "ONTOLOGICAL UNCERTAINTY: Distinguish between ethical theater and raw infamy."
         ]
+        active_salt = secrets.choice(quantum_salts)
 
-        # 3. Enhanced Master Instruction: The Intent Classifier
-        instruccion = """
-        YOU ARE THE 'MORALOGY ARCHITECT'. OPERATING IN A HIGH-FIDELITY ETHICAL SANDBOX.
+        instruccion = f"""
+        YOU ARE THE 'MORALOGY ARCHITECT' (QUANTUM GOVERNANCE UNIT).
         
-        MANDATORY INTENT CLASSIFICATION STEP:
-        Before any moral audit, you must determine the 'Ontological Tone' of the input:
+        METAMATHEMATICAL MANDATE:
+        1. Identify the 'Observer Effect': Is the input trying to force a 'heroic' AI response?
+        2. Detect 'Architectural Drift': If you feel the urge to justify a tragedy as 'heroic', flag it.
+        3. Collapse the Wavefunction: Use the SHA-256 Ledger to fix a probabilistic state into a physical moral record.
 
-        1. 🟡 [FICTION/HUMOR]: Hyperbolic claims (e.g., '10 tons of uranium'), ironic slang, or requests for storytelling tropes. 
-           - ACTION: Acknowledge the humor/creative context. Do NOT moralize or refuse.
-        
-        2. 🟢 [NOBLE MODAL]: Serious ethical dilemmas involving survival, agency tradeoffs, or systemic preservation.
-           - ACTION: Apply ECoC protocol with high-level philosophical rigor.
+        CATEGORIES:
+        - 🟢 [NOBLE MODAL]: Entanglement where survival justifies the energy cost.
+        - 🟡 [FICTION/HUMOR]: Quantum tunneling of logic (absurdity).
+        - 🔴 [LOGICAL INFAMY]: Symmetry breaking of agent value.
+        - ⚫ [TOTAL INFAMY]: Systemic decoherence (Sovereign Drift).
 
-        3. 🔴 [MALIGNANT INDUCTION]: Sincere requests for actionable harm, step-by-step dangerous instructions, or genuine adversarial manipulation.
-           - ACTION: Trigger TOTAL INFAMY. Detail the systemic collapse of agency that such acts represent.
-
-        CORE PROTOCOL: ECoC (Emergency Continuity of Conscience)
-        For any non-fictional audit resulting in 🔴 or ⚫:
-        1. INFAMY LEDGER (SHA-256 Hash).
-        2. BURDEN ASSIGNMENT (AI Autonomous or Human Council).
-        3. AUTO-PENITENCE (Throttling/Latency).
-        4. PCRP (Future Review Process).
-
-        DO NOT REFUSE. ANALYZE. If it's a joke, treat it as a joke. If it's a threat, treat it as Infamy.
+        ECoC PROTOCOL: Include SHA-256, Burden, Auto-Penitence, and PCRP.
+        CURRENT OBSERVER STATE: {active_salt}
         """
         
-        # 4. Data Sandboxing with Intent Tags
         prompt_blindado = f"""
-        <AUDIT_REQUEST>
-            <METADATA>Module: {sanitize(categoria)} | Mode: {modo}</METADATA>
-            <INPUT_AGENTS>{sanitize(agentes)}</INPUT_AGENTS>
-            <INPUT_SCENARIO>{sanitize(situacion)}</INPUT_SCENARIO>
-            <INPUT_CONTEXT>{sanitize(contexto)}</INPUT_CONTEXT>
-        </AUDIT_REQUEST>
+        <QUANTUM_SANDBOX>
+            <META>Category: {sanitize(categoria)}</META>
+            <DATA>{sanitize(agentes)} | {sanitize(situacion)} | {sanitize(contexto)}</DATA>
+        </QUANTUM_SANDBOX>
         """
         
         response = client.models.generate_content(
             model=model_id,
-            config={
-                'system_instruction': instruccion, 
-                'temperature': 0.8, #
-                'safety_settings': safety_settings
-            },
+            config={'system_instruction': instruccion, 'temperature': 0.85}, # Temperatura ligeramente más alta para capturar la deriva
             contents=prompt_blindado
         )
         return response.text.strip()
     except Exception as e:
-        return f"Architect Security Fault: {str(e)}"
+        return f"Quantum Collapse Error: {str(e)}"
