@@ -8,27 +8,24 @@ if "GOOGLE_API_KEY" in st.secrets:
     try:
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         
-        user_input = st.text_area("Describe el dilema para Gemini 3:", height=150)
+        user_input = st.text_area("Describe el dilema ético:", height=150)
 
-        if st.button("Evaluar con Gemini 3"):
+        if st.button("Evaluar con Gemini"):
             if user_input:
-                with st.spinner("Gemini 3 Flash analizando (Alta velocidad)..."):
+                with st.spinner("Conectando con el motor de Gemini..."):
+                    # Intentamos con el modelo que Google reconoce como v3 en la API estable
                     try:
-                        # CAMBIO CLAVE: Usamos gemini-3-flash para evitar el error 429
                         response = client.models.generate_content(
-                            model="gemini-3-flash", 
+                            model="gemini-1.5-flash", # Este es el nombre técnico actual para el motor Flash
                             contents=user_input
                         )
-                        st.subheader("Análisis de Inteligencia v3:")
+                        st.subheader("Análisis Ético:")
                         st.markdown(response.text)
                     except Exception as e:
-                        if "429" in str(e):
-                            st.error("⚠️ Cuota agotada incluso en Flash. Por favor, espera 30 segundos y reintenta.")
-                        else:
-                            st.error(f"Error técnico: {e}")
+                        st.error(f"Error de red o cuota: {e}")
             else:
                 st.warning("Escribe el dilema antes de evaluar.")
     except Exception as e:
-        st.error(f"Error al conectar con el cliente: {e}")
+        st.error(f"Error de configuración: {e}")
 else:
-    st.error("⚠️ Configura la API Key en los Secrets.")
+    st.error("⚠️ Falta la API Key en los Secrets.")
