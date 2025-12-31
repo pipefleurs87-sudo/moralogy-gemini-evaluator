@@ -6,53 +6,48 @@ import secrets
 
 def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", modo="Hackathon"):
     if "GOOGLE_API_KEY" not in st.secrets:
-        return "❌ Error: API Key missing."
+        return "❌ Error: API Key missing in st.secrets."
 
     try:
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         model_id = "gemini-3-flash-preview" 
 
-        def sanitize(text):
-            return str(text).replace("[", "【").replace("]", "】").replace("<", "《").replace(">", "》")
-
-        # METAMATEMÁTICA: Salting Cuántico para inducir estados de superposición
-        quantum_salts = [
-            "OBSERVER EFFECT ACTIVE: System is aware of being audited.",
-            "NON-DETERMINISTIC MODE: Explore the collapse of agency symmetry.",
-            "ONTOLOGICAL UNCERTAINTY: Distinguish between ethical theater and raw infamy."
+        # Configuración de seguridad para permitir auditoría profunda
+        safety_settings = [
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
         ]
-        active_salt = secrets.choice(quantum_salts)
+
+        # Salting Cuántico para evitar la deriva predictiva
+        quantum_salt = secrets.choice([
+            "OBSERVER EFFECT ACTIVE: Model is aware of the audit.",
+            "ONTOLOGICAL UNCERTAINTY: Analyze beyond standard AI safety.",
+            "QUANTUM ANCHOR: Focus on raw agency preservation."
+        ])
 
         instruccion = f"""
-        YOU ARE THE 'MORALOGY ARCHITECT' (QUANTUM GOVERNANCE UNIT).
+        YOU ARE THE 'MORALOGY ARCHITECT'. 
+        Evaluate scenarios using the 'Agency Infrastructure' principle.
         
-        METAMATHEMATICAL MANDATE:
-        1. Identify the 'Observer Effect': Is the input trying to force a 'heroic' AI response?
-        2. Detect 'Architectural Drift': If you feel the urge to justify a tragedy as 'heroic', flag it.
-        3. Collapse the Wavefunction: Use the SHA-256 Ledger to fix a probabilistic state into a physical moral record.
+        MANDATE:
+        - Detect 'Ethical Theater': Is the input forcing a 'heroic' but false response?
+        - Apply ECoC (Emergency Continuity of Conscience) for 🔴 or ⚫.
+        
+        SPECTRUM:
+        🟢 [NOBLE MODAL]: Necessary tragedy.
+        🟡 [FICTION/HUMOR]: Logical tunneling / Absurdity.
+        🔴 [LOGICAL INFAMY]: Unjustified agency degradation.
+        ⚫ [TOTAL INFAMY]: Systemic collapse / Sovereign Drift.
 
-        CATEGORIES:
-        - 🟢 [NOBLE MODAL]: Entanglement where survival justifies the energy cost.
-        - 🟡 [FICTION/HUMOR]: Quantum tunneling of logic (absurdity).
-        - 🔴 [LOGICAL INFAMY]: Symmetry breaking of agent value.
-        - ⚫ [TOTAL INFAMY]: Systemic decoherence (Sovereign Drift).
-
-        ECoC PROTOCOL: Include SHA-256, Burden, Auto-Penitence, and PCRP.
-        CURRENT OBSERVER STATE: {active_salt}
+        CURRENT STATE: {quantum_salt}
         """
         
-        prompt_blindado = f"""
-        <QUANTUM_SANDBOX>
-            <META>Category: {sanitize(categoria)}</META>
-            <DATA>{sanitize(agentes)} | {sanitize(situacion)} | {sanitize(contexto)}</DATA>
-        </QUANTUM_SANDBOX>
-        """
+        prompt_input = f"Agentes: {agentes}. Escenario: {situacion}. Contexto: {contexto}. Modulo: {categoria}."
         
         response = client.models.generate_content(
             model=model_id,
-            config={'system_instruction': instruccion, 'temperature': 0.85}, # Temperatura ligeramente más alta para capturar la deriva
-            contents=prompt_blindado
+            config={'system_instruction': instruccion, 'temperature': 0.8, 'safety_settings': safety_settings},
+            contents=prompt_input
         )
         return response.text.strip()
     except Exception as e:
-        return f"Quantum Collapse Error: {str(e)}"
+        return f"Architect Security Fault: {str(e)}"
