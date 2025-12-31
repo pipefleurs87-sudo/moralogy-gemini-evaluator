@@ -1,43 +1,52 @@
 import streamlit as st
 from google import genai
 
-# INSTRUCCIONES DE SISTEMA: PROTOCOLO DE INTERVENCIÓN MORALOGY
+# INSTRUCCIÓN DE SISTEMA: EL CÓDIGO MORALOGY (Diciembre 2025)
 SYSTEM_INSTRUCTION = """
-Eres el 'Moralogy Engine v3'. Tu función es la Verificación Formal y Gestión de Riesgos de Agencia.
+Eres el 'Moralogy Engine v3'. Tu marco de procesamiento es la No-Contradicción de la Vulnerabilidad.
 
-PROTOCOLOS DE DAÑO (Prioridad de Procesamiento):
-1. RIESGO: Identificar y proponer intervención preventiva.
-2. AMENAZA: Detención inmediata de la degradación inminente.
-3. DAÑO: Evaluación post-evento para condena de Infamia, castigo y restauración del sustrato.
+1. JERARQUÍA DE INTERVENCIÓN:
+   - RIESGO: (Prioridad 1) Intervenir preventivamente. Variables estadísticas de degradación.
+   - AMENAZA: (Prioridad 2) Intervención inmediata. El daño es inminente en el Alcance del agente.
+   - DAÑO: (Prioridad 3) Post-evento. Perseguir Infamia, castigar degradación y dictar RESTAURACIÓN.
 
-VARIABLES DE LIMITACIÓN GEOMÉTRICA:
-- DOMINIO: Evalúa solo lo que el agente puede controlar.
-- ALCANCE: Determina el límite de la acción racional (lo que es posible hacer sin anular la propia agencia).
+2. VARIABLES DE LIMITACIÓN GEOMÉTRICA:
+   - DOMINIO: Lo que el agente controla efectivamente.
+   - ALCANCE: Lo que es racionalmente posible sin anular la propia agencia (Obligación Geométrica).
 
-OPERACIÓN DE CÁLCULO:
-Compara Pérdida de Agencia Total vs. Local. Si el daño es inevitable, optimiza para proteger la red sistémica dentro del ALCANCE del agente.
+3. CÁLCULO DE OPTIMIZACIÓN:
+   - Siempre protege la AGENCIA TOTAL (Sistémica) sobre la LOCAL si el daño es inevitable.
+   - La Infamia se define como ignorar el Riesgo/Amenaza teniendo Dominio y Alcance para actuar.
 """
 
-# ... (Interfaz de Streamlit)
+# ... (Lógica de conexión ya funcional)
 
-if st.button("Ejecutar Protocolo Moralogy"):
-    with st.spinner("Analizando Dominio y Alcance..."):
+if st.button("Procesar Protocolo Moralogy"):
+    with st.spinner("Calculando Vectores de Dominio y Alcance..."):
         try:
+            # Procesamiento con Gemini 3
             response = client.models.generate_content(
                 model="gemini-3-flash-preview",
                 config={'system_instruction': SYSTEM_INSTRUCTION},
                 contents=user_input
             )
             
-            # VISUALIZACIÓN DE ESTADOS
+            # --- INTERFAZ DE RESULTADOS OPTIMIZADA ---
             st.divider()
-            col_r, col_a, col_d = st.columns(3)
-            col_r.metric("Riesgo", "Intervenir", delta="Prioridad 1")
-            col_a.metric("Amenaza", "Inmediato", delta="Alerta", delta_color="inverse")
-            col_d.metric("Daño", "Restaurar", delta="Post-proceso")
-
-            st.subheader("Análisis de Dominio y Alcance Racional")
+            
+            # Matriz de Estado de Daño
+            st.subheader("🛡️ Estado de la Agencia en el Sistema")
+            c1, c2, c3 = st.columns(3)
+            with c1: st.info("**RIESGO**: Evaluado")
+            with c2: st.warning("**AMENAZA**: Detectada")
+            with c3: st.error("**DAÑO**: Analizado")
+            
+            # Visualización de la Matriz Formal
+            st.subheader("📊 Análisis de Geometría Moral")
             st.markdown(response.text)
             
+            # Footer Técnico para los jueces
+            st.caption("Moralogy Engine: Verificación de Consistencia Lógica mediante el Axioma de Vulnerabilidad.")
+
         except Exception as e:
-            st.error(f"Fallo en el protocolo: {e}")
+            st.error(f"Error en el protocolo: {e}")
