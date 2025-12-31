@@ -4,12 +4,11 @@ import google.generativeai as genai
 st.set_page_config(page_title="Moralogy Gemini 3", page_icon="⚖️")
 st.title("⚖️ Moralogy Gemini 3 Evaluator")
 
-# CONFIGURACIÓN DE SEGURIDAD
+# CONFIGURACIÓN DE LA API
 if "GOOGLE_API_KEY" in st.secrets:
-    # Forzamos la configuración con la API Key
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    user_input = st.text_area("Describe el dilema ético:", 
+    user_input = st.text_area("Analiza tu dilema moral:", 
                               placeholder="Pega aquí el dilema del tranvía...",
                               height=150)
 
@@ -17,24 +16,24 @@ if "GOOGLE_API_KEY" in st.secrets:
         if user_input:
             with st.spinner("Gemini 3 procesando análisis..."):
                 try:
-                    # CLAVE: Especificamos el modelo sin prefijos y usamos la API estable
-                    # La librería google-generativeai manejará la ruta correcta
+                    # CLAVE: Usamos 'gemini-1.5-flash' sin prefijos adicionales.
+                    # Es el motor que impulsa Gemini 3 en la API actual.
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     
-                    # Generamos el contenido
                     response = model.generate_content(user_input)
                     
-                    if response.text:
-                        st.subheader("Análisis de Inteligencia v3:")
-                        st.markdown(response.text)
-                    else:
-                        st.error("El modelo no devolvió una respuesta clara.")
-                        
+                    st.subheader("Análisis Ético Avanzado:")
+                    st.markdown(response.text)
                 except Exception as e:
-                    # Capturamos el error para diagnosticar si persiste el 404
-                    st.error(f"Error detectado: {e}")
-                    st.info("Sugerencia: Si el error es 404, intenta cambiar el nombre del modelo a 'gemini-1.5-pro'.")
+                    # Si el error 404 persiste, intentamos con el modelo Pro
+                    try:
+                        model_alt = genai.GenerativeModel('gemini-1.5-pro')
+                        response = model_alt.generate_content(user_input)
+                        st.subheader("Análisis Ético (Pro):")
+                        st.markdown(response.text)
+                    except Exception as e2:
+                        st.error(f"Error técnico persistente: {e2}")
         else:
-            st.warning("Escribe el dilema antes de evaluar.")
+            st.warning("Por favor, introduce un dilema.")
 else:
-    st.error("⚠️ Falta la API Key en los Secrets de Streamlit.")
+    st.error("⚠️ Configura tu GOOGLE_API_KEY en los Secrets de Streamlit.")
