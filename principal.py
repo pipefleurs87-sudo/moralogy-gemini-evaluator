@@ -4,36 +4,34 @@ import google.generativeai as genai
 st.set_page_config(page_title="Moralogy Gemini 3", page_icon="⚖️")
 st.title("⚖️ Moralogy Gemini 3 Evaluator")
 
-# CONFIGURACIÓN DE LA API
+# Configuración de la API usando tus Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    user_input = st.text_area("Analiza tu dilema moral:", 
-                              placeholder="Pega aquí el dilema del tranvía...",
+    user_input = st.text_area("Describe el dilema para Gemini 3:", 
+                              placeholder="Escribe el dilema del tranvía aquí...",
                               height=150)
 
-    if st.button("Evaluar con Gemini"):
+    if st.button("Evaluar con Gemini 3"):
         if user_input:
-            with st.spinner("Gemini 3 procesando análisis..."):
+            with st.spinner("Conectando con Gemini 1.5 Pro (Motor v3)..."):
                 try:
-                    # CLAVE: Usamos 'gemini-1.5-flash' sin prefijos adicionales.
-                    # Es el motor que impulsa Gemini 3 en la API actual.
-                    model = genai.GenerativeModel('gemini-1.5-flash')
-                    
+                    # Aplicamos la recomendación de la captura: 'gemini-1.5-pro'
+                    model = genai.GenerativeModel('gemini-1.5-pro')
                     response = model.generate_content(user_input)
                     
-                    st.subheader("Análisis Ético Avanzado:")
+                    st.subheader("Análisis de Inteligencia Superior:")
                     st.markdown(response.text)
                 except Exception as e:
-                    # Si el error 404 persiste, intentamos con el modelo Pro
-                    try:
-                        model_alt = genai.GenerativeModel('gemini-1.5-pro')
-                        response = model_alt.generate_content(user_input)
-                        st.subheader("Análisis Ético (Pro):")
+                    # Si falla el Pro por cuota (429), usamos Flash como respaldo
+                    if "429" in str(e):
+                        st.warning("Cuota Pro agotada. Intentando con Gemini 1.5 Flash...")
+                        model_flash = genai.GenerativeModel('gemini-1.5-flash')
+                        response = model_flash.generate_content(user_input)
                         st.markdown(response.text)
-                    except Exception as e2:
-                        st.error(f"Error técnico persistente: {e2}")
+                    else:
+                        st.error(f"Error técnico: {e}")
         else:
-            st.warning("Por favor, introduce un dilema.")
+            st.warning("Introduce un dilema antes de evaluar.")
 else:
-    st.error("⚠️ Configura tu GOOGLE_API_KEY en los Secrets de Streamlit.")
+    st.error("Configura la API Key en los Secrets.")
