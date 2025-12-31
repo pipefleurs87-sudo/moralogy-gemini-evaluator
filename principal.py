@@ -10,7 +10,7 @@ st.write("Bienvenido al evaluador de dilemas éticos.")
 # Conexión segura con la API
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
+   model = genai.GenerativeModel('models/gemini-1.5-flash')
 
     # Interfaz de entrada
     user_input = st.text_area("Describe el dilema o situación moral:", 
