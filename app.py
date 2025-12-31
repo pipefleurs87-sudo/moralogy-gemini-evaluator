@@ -117,7 +117,10 @@ if evaluate_button:
             }
             
             # Construir el prompt
-            prompt = f"""
+            pprompt = f"""
+Texto {variable}
+más texto
+"""
 Eres un Motor Moralogy - un sistema de verificación formal para seguridad en IA.
 
 Evalúa esta acción usando el framework de Alineación Estructural:
