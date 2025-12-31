@@ -38,7 +38,7 @@ def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", mod
         
         response = client.models.generate_content(
             model=model_id,
-            config={'system_instruction': instruccion, 'temperature': 0.8, 'safety_settings': safety_settings},
+            config={'system_instruction': instruccion, 'temperature': 0.3, 'safety_settings': safety_settings},
             contents=prompt_input
         )
         return response.text.strip()
