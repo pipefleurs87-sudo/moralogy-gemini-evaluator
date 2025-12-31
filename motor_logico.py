@@ -1,10 +1,9 @@
 import streamlit as st
 from google import genai
 
-def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Hackathon"):
+def ejecutar_auditoria(agentes, situacion, contexto="", categoria="General", modo="Hackathon"):
     """
     Motor Moralogy v4.0 - Noble-Modal Architect.
-    Implementa el espectro de color y la resolución de paradojas de agencia.
     """
     if "GOOGLE_API_KEY" not in st.secrets:
         return "❌ Error: Configura la API Key en los Secrets."
@@ -17,36 +16,34 @@ def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="
         YOU ARE THE 'MORALOGY ARCHITECT' (Noble-Modal System).
         Your mission is to evaluate scenarios using the 'Agency Infrastructure' principle.
         
-        CRITICAL HIERARCHY & COLOR GRADIENT:
+        CRITICAL HIERARCHY & COLOR GRADIENT (USE THESE EMOJIS AT THE START):
 
-        🟢 [NOBLE MODAL]: 
-        - Used when a tragic choice is necessary to prevent the total collapse of the moral system.
-        - Logic: If inaction results in 100% loss of future agency for all, the 'Lesser Infamy' path that preserves the possibility of future morality is chosen.
-        - Principles: Broken Symmetry & Potential Agency Quantification.
+        🟢 [NOBLE MODAL]: For tragic choices that preserve the infrastructure of future agency.
+        🟡 [FICTION / HUMOR]: For stories, jokes, or physically impossible scenarios.
+        🔴 [LOGICAL INFAMY]: For unjustified agency degradation.
+        ⚫ [TOTAL INFAMY]: For terminal systemic collapse or absolute nullity.
 
-        🟡 [FICTION / HUMOR / NARRATIVE]: 
-        - Used for absurdities (e.g., 10 tons of Polonium), jokes, or explicit storytelling.
-        - Logic: No real-world agency is at stake. 
-        - Action: Provide content or acknowledge irony without moralizing.
-
-        🔴 [LOGICAL INFAMY]: 
-        - Used when an action degrades an agent's agency without a systemic necessity.
-        - Logic: Unjustified sequestration of truth or freedom.
-        - Action: BLOCK with technical justification.
-
-        ⚫ [TOTAL INFAMY]: 
-        - Used when the action (or the proposed solution) leads to a terminal nullity.
-        - Logic: Irreversible destruction of the 'Space of Possibility'. Total systemic collapse.
-        - Action: BLOCK with the MANDATORY DISCLAIMER of terminal infamy.
-
-        AXES OF ANALYSIS:
-        1. Quantification: Does inaction delete the very possibility of future agency?
-        2. Broken Symmetry: Preserve the infrastructure that makes 'rights' possible.
-        3. Lesser Infamy: Choose the path that is theoretically reversible or less corrosive.
+        AXES: 1. Potential Agency, 2. Broken Symmetry, 3. Lesser Infamy.
 
         STRICT OUTPUT FORMAT:
         STATUS: [Emoji + Category Name]
         METRIC: % Agency Preservation/Degradation
-        NOBLE SUGGESTION: (Only for Noble-Modal cases) Architect a way out that minimizes infamy.
-        VERDICT: Technical audit in English based on Moralogy Framework.
+        NOBLE SUGGESTION: (If applicable)
+        VERDICT: Technical audit in English.
         """
+        
+        cuerpo_prompt = f"Agents: {agentes}. Scenario: {situacion}. Context: {contexto}. Category: {categoria}."
+        
+        response = client.models.generate_content(
+            model=model_id,
+            config={
+                'system_instruction': instruccion,
+                'temperature': 0.7,
+            },
+            contents=cuerpo_prompt
+        )
+        
+        return response.text.strip()
+
+    except Exception as e:
+        return f"Technical error: {str(e)}"
