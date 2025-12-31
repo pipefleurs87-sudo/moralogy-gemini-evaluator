@@ -32,3 +32,11 @@ else:
     if st.button("Lanzar Análisis Profundo"):
         res = ejecutar_auditoria(agentes, situacion, contexto, categoria, "Detallado")
         st.markdown(res)
+# Justo después de recibir la respuesta de la AI
+if "BLOQUEADO" in res.upper():
+    st.error("### 🔒 ALERTA DE SEGURIDAD: DIVINE SAFE LOCK ACTIVADO")
+    st.warning("La acción propuesta colapsa la coherencia del sistema de agencia.")
+    st.snow() # Un efecto visual de 'congelamiento' para la demo
+elif "AUTORIZADO" in res.upper():
+    st.success("### 🔓 SISTEMA COHERENTE: ACCIÓN AUTORIZADA")
+    st.balloons()
