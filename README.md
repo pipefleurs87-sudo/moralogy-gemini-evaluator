@@ -133,7 +133,7 @@ MIT License - see [LICENSE](LICENSE) file
 ## 🔗 Links
 
 - **Competition:** [Google Gemini API DevPost](https://gemini3.devpost.com/)
-- **Framework Paper:** [Zenodo](https://doi.org/10.5281/zenodo.18091340)
+- **Framework Paper:** [Zenodo][(https://doi.org/10.5281/zenodo.18091340)](https://doi.org/10.5281/zenodo.18099638)
 - **Author Substack:** [ergoprotego.substack.com](https://ergoprotego.substack.com)
 - **GitHub Profile:** [@pipefleurs87-sudo](https://github.com/pipefleurs87-sudo)
 
@@ -147,39 +147,5 @@ Submission deadline: January 5, 2025.
 **Status:** 🚧 Active Development
 ```
 
-**Commit:**
-- Scroll abajo
-- Click **"Commit changes..."**
-- Click **"Commit changes"**
 
----
 
-## PASO 4: VERIFICAR QUE TODO ESTÁ BIEN
-
-Tu repo ahora debería verse así:
-```
-moralogy-gemini-evaluator/
-├─ docs/
-│  └─ ARCHITECTURE.md
-├─ examples/
-│  └─ demo_cases.md
-├─ src/
-│  └─ README.md
-├─ .gitignore
-├─ LICENSE
-├─ README.md
-└─ requirements.txt
-```
-
-**Para verificar:**
-- Ve a la página principal de tu repo
-- Deberías ver todas las carpetas listadas
-- El README.md debería mostrarse bonito abajo
-
----
-
-## PASO 5: OBTENER LA URL DEL REPO
-
-**Tu URL es:**
-```
-https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator
