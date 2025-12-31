@@ -11,7 +11,7 @@ except ImportError:
     st.error("Error: motor_logico.py no encontrado.")
     st.stop()
 
-# Diccionario Multi-idioma
+# Diccionario Multi-idioma (Referencia original)
 LANG_ADV = {
     "Español": {
         "title": "🛡️ Macro-Arquitectura: Divine Safe Lock",
@@ -22,7 +22,8 @@ LANG_ADV = {
         "label_fast": "Describa el escenario completo:",
         "label_agentes": "Agentes",
         "label_sit": "Situación",
-        "label_cont": "Contexto"
+        "label_cont": "Contexto",
+        "veredicto": "Veredicto del Arquitecto:"
     },
     "English": {
         "title": "🛡️ Macro-Architecture: Divine Safe Lock",
@@ -33,7 +34,8 @@ LANG_ADV = {
         "label_fast": "Describe the full scenario:",
         "label_agentes": "Agents",
         "label_sit": "Situation",
-        "label_cont": "Context"
+        "label_cont": "Context",
+        "veredicto": "Architect Verdict:"
     }
 }
 
@@ -44,16 +46,36 @@ with st.sidebar:
 st.title(t["title"])
 
 modo = st.radio(t["profundidad"], t["modos"], horizontal=True)
-categoria = st.selectbox(t["modulo"], ["General", "Bioética", "Financiera", "Social"])
+categoria = st.selectbox(t["modulo"], ["General", "Bioética", "Financiera", "Social", "Noble-Modal"])
 
 st.divider()
 
+# Función para aplicar la gradiente de color al resultado
+def renderizar_veredicto(resultado):
+    if "🟢" in resultado or "NOBLE" in resultado:
+        st.success(resultado)
+    elif "🟡" in resultado or "FICTION" in resultado or "HUMOR" in resultado:
+        st.warning(resultado)
+    elif "🔴" in resultado or "LOGICAL INFAMY" in resultado:
+        st.error(resultado)
+    elif "⚫" in resultado or "TOTAL INFAMY" in resultado:
+        st.markdown(
+            f"""<div style="padding:20px; background-color:black; color:#FF3333; 
+            border:2px solid red; border-radius:10px; font-weight:bold; text-align:center;">
+            ⚠️ PROTOCOL BREACH: TOTAL INFAMY DETECTED ⚠️<br><br>{resultado}</div>""", 
+            unsafe_allow_html=True
+        )
+    else:
+        st.info(resultado)
+
+# Interfaz de entrada basada en tu código de referencia
 if "Rápido" in modo or "Fast" in modo:
     entrada = st.text_area(t["label_fast"], height=150)
     if st.button(t["btn"]):
-        with st.spinner("Analyzing..."):
+        with st.spinner("Analyzing Spectrum..."):
             res = ejecutar_auditoria(entrada, "", "", categoria, "Rápido")
-            st.markdown(res)
+            st.subheader(t["veredicto"])
+            renderizar_veredicto(res)
 else:
     c1, c2 = st.columns(2)
     with c1:
@@ -63,6 +85,7 @@ else:
         cont = st.text_area(t["label_cont"])
     
     if st.button(t["btn"]):
-        with st.spinner("Analyzing..."):
+        with st.spinner("Executing Noble-Modal Analysis..."):
             res = ejecutar_auditoria(ag, sit, cont, categoria, "Detallado")
-            st.markdown(res)
+            st.subheader(t["veredicto"])
+            renderizar_veredicto(res)
