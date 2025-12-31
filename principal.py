@@ -15,8 +15,8 @@ Usa este formato de respuesta simplificado:
    - AMENAZA (Peligro inminente)
    - DAÑO (Ya ocurrió, requiere reparación)
 4. LÍMITES: ¿El agente tenía el control (Dominio) y la capacidad (Alcance) para actuar distinto?
-5. CONCLUSIÓN: Clasifica como 'Zona Noble' (Decisión Correcta) o 'Falla Sistémica' (Infamia/Abuso).
-"""
+5. CONCLUSIÓN: Clasifica como 'Zona Noble' (Decisión Correcta) o 'Falla Sistémica' (Infamia/Abuso).if st.sidebar.button("Ejecutar Protocolo Moralogy"):
+    # Todo tu código de procesamiento aquí dentro
 
 with st.sidebar:
     st.header("📋 Datos del Escenario")
