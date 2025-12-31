@@ -85,12 +85,3 @@ Usa encabezados claros y formato legible."""
 
 st.markdown("---")
 st.markdown("<div style='text-align: center'><small>Construido para Google Gemini API Developer Competition 2024</small></div>", unsafe_allow_html=True)
-```
-
-4. Click en **"Commit new file"**
-
-### Paso 3: Verifica que tu `requirements.txt` tenga:
-```
-streamlit
-google-generativeai
-python-dotenv
