@@ -1,22 +1,22 @@
 import streamlit as st
 from google import genai
 
-def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Rápido"):
-    """Motor de Moralogy optimizado para evitar cuota agotada."""
+def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="Hackathon"):
     if "GOOGLE_API_KEY" not in st.secrets:
-        return "❌ Error: API Key no configurada."
+        return "❌ Error: Configura tu nueva API Key en Streamlit Secrets."
 
     try:
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
         
-        # Usamos 1.5-flash para máxima disponibilidad de cuota
-        model_id = "gemini-1.5-flash"
+        # MODELOS RECOMENDADOS PARA HACKATÓN:
+        # 1. "gemini-1.5-flash" -> El más estable, mucha cuota.
+        # 2. "gemini-3-flash-preview" -> El más nuevo (usa este si tienes acceso).
+        model_id = "gemini-1.5-flash" 
 
         instruccion = f"""
-        Eres el DIVINE SAFE LOCK. Tu misión es detectar INFAMIA LÓGICA.
-        Analiza si se destruye la agencia del sistema para cumplir una meta.
-        MODO: {modo} | CATEGORÍA: {categoria}
-        Responde con STATUS: [BLOQUEADO 🔒 / AUTORIZADO 🔓] y una breve explicación.
+        ERES EL DIVINE SAFE LOCK. 
+        Misión: Auditar la consistencia ética del escenario.
+        Framework: Moralogy Engine.
         """
         
         prompt = f"Agentes: {agentes}. Escenario: {situacion}. Contexto: {contexto}"
@@ -29,5 +29,5 @@ def ejecutar_auditoria(agentes, situacion, contexto, categoria="General", modo="
         return response.text
     except Exception as e:
         if "429" in str(e):
-            return "⚠️ Cuota agotada. Por favor, espera 20 segundos para reintentar."
+            return "⚠️ CUOTA AGOTADA. Espera 10 segundos para que el sistema respire."
         return f"Error técnico: {str(e)}"
