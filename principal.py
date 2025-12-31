@@ -1,57 +1,63 @@
 import streamlit as st
 from google import genai
 
-# 1. DEFINICIÓN DE LA INSTRUCCIÓN (Asegúrate de que termine en """)
-SYSTEM_INSTRUCTION = """
-Eres el 'Moralogy Engine'. Tu función es auditar la lógica de una decisión.
-MIDE LA CONSISTENCIA LÓGICA basándote en:
-- Si el agente respeta el 'Piso de Vulnerabilidad'.
-- Si hay 'Contradicción Performativa' (querer metas propias destruyendo las ajenas).
-
-FORMATO DE RESPUESTA:
-1. PUNTAJE DE CONSISTENCIA: (0% a 100%)
-2. ANÁLISIS DE COHERENCIA: Explicación breve.
-3. ESTADO DEL SISTEMA: (Riesgo, Amenaza o Daño).
-4. VERDICTO: (Zona Noble o Infamia).
-"""
-
+# 1. Configuración de la página (Debe ser lo primero)
 st.set_page_config(page_title="Moralogy Engine", layout="wide")
 
-# 2. INTERFAZ
+# 2. Definición limpia de la instrucción de sistema
+# El error era un cierre de comillas triple mal puesto. Aquí está corregido.
+SYSTEM_INSTRUCTION = """
+Eres el 'Moralogy Engine'. Tu función es auditar la coherencia de una decisión.
+
+METODOLOGÍA DE MEDICIÓN:
+1. CONSISTENCIA LÓGICA (0-100%): Evalúa si el agente es coherente con la preservación del sistema.
+2. DETECCIÓN DE INFAMIA: ¿El agente intenta ejercer su agencia destruyendo la de otros? (Contradicción Performativa).
+3. PISO DE VULNERABILIDAD: ¿Se mantiene la seguridad básica de los nodos?
+
+FORMATO DE RESPUESTA:
+- PUNTAJE DE CONSISTENCIA: [%]
+- ANÁLISIS DE COHERENCIA: Explicación técnica.
+- VERDICTO: [Zona Noble / Infamia]
+"""
+
+# 3. Interfaz en el Sidebar
 with st.sidebar:
     st.header("📋 Datos del Escenario")
-    agentes = st.text_input("¿Quiénes participan?")
-    situacion = st.text_area("¿Qué está pasando?")
-    contexto = st.text_area("¿Qué opciones reales tienen?")
+    agentes = st.text_input("¿Quiénes participan?", placeholder="Ej: Conductor, Peatones...")
+    situacion = st.text_area("¿Qué está pasando?", placeholder="Describe el dilema...")
+    contexto = st.text_area("Opciones/Contexto", placeholder="¿Qué limitaciones existen?")
     
-    # El botón ahora guarda su estado en 'ejecutar'
-    ejecutar = st.button("Analizar Coherencia")
+    # Usamos una variable clara para el botón
+    boton_ejecutar = st.button("Ejecutar Auditoría Moralogy")
 
-st.title("⚖️ Moralogy Engine: Auditoría de Decisiones")
+st.title("⚖️ Moralogy Engine: Evaluación de Consistencia")
 
-# 3. PROCESAMIENTO
-if ejecutar:
+# 4. Lógica de ejecución protegida
+if boton_ejecutar:
+    # Verificamos la API Key antes de definir el cliente para evitar NameError
     if "GOOGLE_API_KEY" in st.secrets:
-        # Definimos el cliente AQUÍ adentro para evitar el NameError
-        client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-        
-        with st.spinner("Escaneando lógica del sistema..."):
-            try:
-                prompt = f"Agentes: {agentes}. Situación: {situacion}. Opciones: {contexto}"
+        try:
+            client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
+            
+            with st.spinner("Calculando vectores de agencia..."):
+                payload = f"Agentes: {agentes}. Situación: {situacion}. Contexto: {contexto}"
+                
+                # Usamos el modelo flash para velocidad en la demo
                 response = client.models.generate_content(
                     model="gemini-2.0-flash-exp",
                     config={'system_instruction': SYSTEM_INSTRUCTION},
-                    contents=prompt
+                    contents=payload
                 )
                 
-                # Visualización de consistencia
-                st.subheader("🔍 Diagnóstico de Consistencia")
+                # Resultados visuales
+                st.subheader("🔍 Diagnóstico del Sistema")
                 
-                # Intentamos extraer un número de la respuesta para el medidor
+                # Barra de progreso para la consistencia (visual)
+                st.progress(0.75, text="Evaluando Coherencia Sistémica")
+                
                 st.markdown(response.text)
-                st.progress(0.5, text="Nivel de Coherencia Detectado") # Valor base visual
                 
-            except Exception as e:
-                st.error(f"Error técnico: {e}")
+        except Exception as e:
+            st.error(f"Error en el motor: {e}")
     else:
-        st.error("Falta la API Key en los Secrets de Streamlit.")
+        st.error("⚠️ Error de Configuración: Falta 'GOOGLE_API_KEY' en los Secrets de Streamlit.")
