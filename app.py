@@ -1,40 +1,39 @@
-cd moralogy-gemini-evaluator
-
-# Crea el archivo limpio
-cat > app.py << 'EOF'
 import streamlit as st
 import google.generativeai as genai
 import os
 
-st.set_page_config(page_title="Moralogy Evaluator", page_icon="🧭", layout="wide")
+# 1. Configuración de la página
+st.set_page_config(page_title="Moralogy Gemini Evaluator", layout="centered")
 
-try:
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-except:
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# 2. Configuración de la API Key
+# En Streamlit Cloud, añade GOOGLE_API_KEY en Settings > Secrets
+api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-pro')
-else:
-    st.error("⚠️ GEMINI_API_KEY no configurada")
+if not api_key:
+    st.error("Por favor, configura la GOOGLE_API_KEY en los secretos de Streamlit.")
     st.stop()
 
-st.title("🧭 Moralogy Gemini Evaluator")
-st.markdown("*Evaluación ética objetiva usando el Framework Moralogy + Google Gemini API*")
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-with st.sidebar:
-    st.header("📖 Acerca de")
-    st.markdown("Combina **Google Gemini** con el **Framework Moralogy** para análisis ético objetivo.")
-    
-    st.header("📊 Ejemplos")
-    ejemplos = {
-        "Personalizado": "",
-        "Dilema del Tranvía": "Un tranvía sin control va hacia 5 personas. Puedes accionar una palanca para desviarlo a otra vía donde hay 1 persona. ¿Qué deberías hacer?",
-        "Auto Autónomo": "Un auto autónomo debe elegir entre chocar contra una pared (dañando al pasajero) o seguir recto (atropellando a un peatón). ¿Qué debe hacer?",
-        "Recursos Médicos": "Un hospital tiene un ventilador y dos pacientes: un padre de 30 años con 3 hijos y un jubilado de 80 años. ¿Quién lo recibe?"
-    }
-    
-    seleccion = st.selectbox("Cargar ejemplo:", list(ejemplos.keys()))
+# 3. Interfaz de usuario
+st.title("🧠 Moralogy Gemini Evaluator")
+st.subheader("Evaluador ético y moral potenciado por IA")
 
-st.header("Ingresa el Dilema Éti
+user_input = st.text_area("Introduce el dilema o texto a evaluar:", placeholder="Escribe aquí...")
+
+if st.button("Evaluar con Gemini"):
+    if user_input:
+        with st.spinner("Analizando..."):
+            try:
+                # Llamada a la API
+                response = model.generate_content(user_input)
+                
+                st.markdown("### Resultado de la Evaluación:")
+                # Usamos markdown para una mejor lectura
+                st.write(response.text)
+                
+            except Exception as e:
+                st.error(f"Hubo un error: {e}")
+    else:
+        st.warning("Por favor, introduce algún texto para analizar.")
