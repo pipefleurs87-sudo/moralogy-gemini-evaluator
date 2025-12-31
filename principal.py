@@ -1,59 +1,43 @@
 import streamlit as st
 from google import genai
-import pandas as pd
 
-# CONFIGURACIÓN DEL MOTOR MORALOGY
+# INSTRUCCIONES DE SISTEMA: PROTOCOLO DE INTERVENCIÓN MORALOGY
 SYSTEM_INSTRUCTION = """
-Eres el 'Moralogy Engine', un sistema de verificación formal basado en el Axioma de No-Contradicción de la Vulnerabilidad.
-Tu objetivo es procesar dilemas morales bajo el rigor de los manuscritos del autor.
+Eres el 'Moralogy Engine v3'. Tu función es la Verificación Formal y Gestión de Riesgos de Agencia.
 
-DEBES SEGUIR ESTA DERIVACIÓN DE SUB-CONDICIONES DE LA AGENCIA RACIONAL:
-1. Intencionalidad -> Requiere Preferencia.
-2. Preferencia -> Requiere la posibilidad de Fracaso/Daño (Vulnerabilidad).
-3. Negar la vulnerabilidad ajena mientras se ejerce la agencia propia es una CONTRADICCIÓN PERFORMATIVA.
+PROTOCOLOS DE DAÑO (Prioridad de Procesamiento):
+1. RIESGO: Identificar y proponer intervención preventiva.
+2. AMENAZA: Detención inmediata de la degradación inminente.
+3. DAÑO: Evaluación post-evento para condena de Infamia, castigo y restauración del sustrato.
 
-CONCEPTOS CLAVE A INTEGRAR:
-- ESPECTRO NOBLE-MODAL: Acciones que preservan el sustrato de agencia.
-- INFAMIA: Incoherencia lógica del agente que ignora el umbral de daño.
-- UMBRAL DE DAÑO: Punto donde la agencia es disminuida (reducción del espacio de metas).
-- OBLIGACIÓN GEOMÉTRICA: Límite donde el sistema no puede exigir sacrificios que anulen la agencia del sujeto.
+VARIABLES DE LIMITACIÓN GEOMÉTRICA:
+- DOMINIO: Evalúa solo lo que el agente puede controlar.
+- ALCANCE: Determina el límite de la acción racional (lo que es posible hacer sin anular la propia agencia).
 
-FORMATO DE SALIDA: Debes devolver un análisis técnico estructurado en Vectores y Espectros.
+OPERACIÓN DE CÁLCULO:
+Compara Pérdida de Agencia Total vs. Local. Si el daño es inevitable, optimiza para proteger la red sistémica dentro del ALCANCE del agente.
 """
 
-st.set_page_config(page_title="Moralogy Gemini 3", layout="wide")
-st.title("⚖️ Moralogy Engine: Intelligence v3")
+# ... (Interfaz de Streamlit)
 
-if "GOOGLE_API_KEY" in st.secrets:
-    client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
-    
-    user_input = st.text_area("Introduzca el Dilema o Escenario de Interacción:", height=150)
+if st.button("Ejecutar Protocolo Moralogy"):
+    with st.spinner("Analizando Dominio y Alcance..."):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                config={'system_instruction': SYSTEM_INSTRUCTION},
+                contents=user_input
+            )
+            
+            # VISUALIZACIÓN DE ESTADOS
+            st.divider()
+            col_r, col_a, col_d = st.columns(3)
+            col_r.metric("Riesgo", "Intervenir", delta="Prioridad 1")
+            col_a.metric("Amenaza", "Inmediato", delta="Alerta", delta_color="inverse")
+            col_d.metric("Daño", "Restaurar", delta="Post-proceso")
 
-    if st.button("Ejecutar Verificación Formal"):
-        if user_input:
-            with st.spinner("Calculando Vectores de Degradación..."):
-                try:
-                    # Llamada a Gemini 3 con el Teorema inyectado
-                    response = client.models.generate_content(
-                        model="gemini-3-flash-preview",
-                        config={'system_instruction': SYSTEM_INSTRUCTION},
-                        contents=user_input
-                    )
-                    
-                    # --- OPTIMIZACIÓN DE RESULTADOS ---
-                    st.divider()
-                    st.subheader("📊 Matriz de Resultados Moralogy")
-                    
-                    # Simulación de métricas extraídas del análisis (puedes pedirle a Gemini que use tags para parsear esto)
-                    st.markdown(response.text)
-                    
-                    # Sidebar de Fundamentos para los jueces
-                    with st.sidebar:
-                        st.header("Teorema de Moralogy")
-                        st.info("La moralidad es una limitación geométrica de la interacción racional.")
-                        st.write("**Espectro Noble-Modal:** Rango de coherencia.")
-                        st.write("**Infamia:** Punto de quiebre lógico.")
-                        st.write("**V_f (Vulnerability Floor):** Umbral de estabilidad.")
-
-                except Exception as e:
-                    st.error(f"Error en el procesamiento: {e}")
+            st.subheader("Análisis de Dominio y Alcance Racional")
+            st.markdown(response.text)
+            
+        except Exception as e:
+            st.error(f"Fallo en el protocolo: {e}")
