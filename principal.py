@@ -1,30 +1,30 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai # El nuevo import de Gemini 3
 
-st.set_page_config(page_title="Moralogy Evaluator", page_icon="⚖️")
+st.set_page_config(page_title="Moralogy Evaluator v3", page_icon="⚖️")
 
-st.title("⚖️ Moralogy Gemini Evaluator")
+st.title("⚖️ Moralogy Gemini 3 Evaluator")
 
-# Verificamos la conexión
+# Configuración del nuevo cliente de Gemini 3
 if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # Intentamos con el nombre estándar del modelo
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    user_input = st.text_area("Describe el dilema para Gemini 3:", height=150)
 
-    user_input = st.text_area("Describe el dilema o situación moral:", height=150)
-
-    if st.button("Realizar Evaluación"):
+    if st.button("Evaluar con Gemini 3"):
         if user_input:
-            with st.spinner("Gemini está analizando..."):
+            with st.spinner("Gemini 3 está analizando..."):
                 try:
-                    # Respuesta de la IA
-                    response = model.generate_content(user_input)
-                    st.subheader("Análisis Ético:")
+                    # Usamos el modelo exacto de tu captura: gemini-3-pro-preview
+                    response = client.models.generate_content(
+                        model="gemini-3-pro-preview", 
+                        contents=user_input
+                    )
+                    st.subheader("Análisis de Última Generación (v3):")
                     st.write(response.text)
                 except Exception as e:
-                    st.error(f"Error técnico: {e}")
+                    st.error(f"Error de conexión con Gemini 3: {e}")
         else:
-            st.warning("Escribe el dilema antes de evaluar.")
+            st.warning("Escribe algo para que Gemini 3 lo analice.")
 else:
-    st.error("Falta la GOOGLE_API_KEY en los Secrets de Streamlit.")
+    st.error("Configura la API Key en los Secrets.")
