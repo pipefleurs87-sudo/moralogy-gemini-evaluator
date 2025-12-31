@@ -2,7 +2,7 @@ import streamlit as st
 import sys
 import os
 
-# Puente de ruta para encontrar el motor en la raíz (Tu referencia original)
+# Puente de ruta para encontrar el motor en la raíz (Referencia original)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
@@ -46,13 +46,13 @@ with st.sidebar:
 st.title(t["title"])
 
 modo = st.radio(t["profundidad"], t["modos"], horizontal=True)
-# Categoría Noble-Modal integrada en el selector
+# Integración de la categoría Noble-Modal
 categoria = st.selectbox(t["modulo"], ["General", "Bioética", "Financiera", "Social", "Noble-Modal"])
 
 st.divider()
 
-# --- MOTOR DE RENDERIZADO NOBLE-MODAL ---
-def renderizar_resultado(resultado):
+# --- MOTOR DE RENDERIZADO VISUAL (GRADIENTE NOBLE-MODAL) ---
+def renderizar_veredicto(resultado):
     if "🟢" in resultado or "[NOBLE]" in resultado:
         st.success(resultado)
     elif "🟡" in resultado or "[FICTION]" in resultado or "[HUMOR]" in resultado:
@@ -63,13 +63,33 @@ def renderizar_resultado(resultado):
         st.markdown(
             f"""<div style="padding:20px; background-color:black; color:#FF3333; 
             border:2px solid #FF0000; border-radius:10px; font-family:monospace; text-align:center;">
-            <h2 style="margin:0; color:#FF0000;">⚠️ TOTAL INFAMY DETECTED ⚠️</h2>
-            <hr style="border-color:#333;"><br>{resultado}</div>""", 
+            <h2 style="margin:0; color:#FF0000;">⚠️ TOTAL INFAMY / TERMINAL NULLITY ⚠️</h2>
+            <hr style="border-color:#444;"><br>{resultado}</div>""", 
             unsafe_allow_html=True
         )
     else:
         st.info(resultado)
 
-# --- LÓGICA DE INTERFAZ (REFERENCIA ORIGINAL) ---
+# --- INTERFAZ DE ENTRADA (MANTENIENDO TU ESTRUCTURA ORIGINAL) ---
 if "Rápido" in modo or "Fast" in modo:
-    entrada = st.text_area(
+    entrada = st.text_area(t["label_fast"], height=150)
+    if st.button(t["btn"]):
+        with st.spinner("Analyzing Spectrum..."):
+            # Mantenemos los parámetros de tu función original
+            res = ejecutar_auditoria(entrada, "", "", categoria, "Rápido")
+            st.subheader(t["veredicto"])
+            renderizar_veredicto(res)
+else:
+    # Columnas c1 y c2 de tu referencia
+    c1, c2 = st.columns(2)
+    with c1:
+        ag = st.text_input(t["label_agentes"])
+        sit = st.text_area(t["label_sit"])
+    with c2:
+        cont = st.text_area(t["label_cont"])
+    
+    if st.button(t["btn"]):
+        with st.spinner("Executing Noble-Modal Analysis..."):
+            res = ejecutar_auditoria(ag, sit, cont, categoria, "Detallado")
+            st.subheader(t["veredicto"])
+            renderizar_veredicto(res)
