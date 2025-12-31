@@ -46,3 +46,5 @@ if st.button("Evaluar Escenario"):
 
 st.divider()
 st.caption("Herramienta de evaluación moral basada en modelos generativos de Google.")
+import google.generativeai as genai
+
