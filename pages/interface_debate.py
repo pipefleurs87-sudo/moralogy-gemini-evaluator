@@ -68,8 +68,8 @@ try:
 except Exception as e:
     st.error(f"Error en el motor de debate: {e}")
 if st.button("🧹 Iniciar Nuevo Juicio"):
-    # Limpiamos todo para empezar de cero
-    del st.session_state['caso_actual']
+    # Usamos .pop con None para evitar el KeyError si la clave no existe
+    st.session_state.pop('caso_actual', None) 
     st.session_state.paso_debate = 1
     st.session_state.velo_activo = True
     st.rerun()
