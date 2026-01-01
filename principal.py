@@ -1,72 +1,43 @@
 import streamlit as st
-import pandas as pd
 import json
 import os
-# Importación directa y segura para evitar ImportErrors en Cloud
-try:
-    from motor_logico import model, ge, ejecutar_auditoria_maestra
-except ImportError:
-    st.error("Error de sistema: No se encontró motor_logico.py en la raíz.")
+import sys
 
-def main():
-    st.set_page_config(page_title="Moralogy Engine v3.0", layout="wide")
-    
-    # --- MÓDULO DE IDIOMA ---
-    idioma = st.sidebar.selectbox("Idioma / Language", ["Español", "English"])
-    t = {
-        "Español": {
-            "title": "🏛️ Moralogy Engine: Gobernanza IA",
-            "box": "Evaluación Rápida (Caja Única):",
-            "btn": "Analizar",
-            "upload": "Procesamiento Masivo (CSV):",
-            "success": "✅ Auditoría masiva completada."
-        },
-        "English": {
-            "title": "🏛️ Moralogy Engine: AI Governance",
-            "box": "Quick Evaluation (Single Box):",
-            "btn": "Analyze",
-            "upload": "Bulk Processing (CSV):",
-            "success": "✅ Bulk audit completed."
-        }
-    }[idioma]
+# Critical fix for ImportErrors
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-    st.title(t["title"])
+from motor_logico import model, ge
 
-    # --- CAJA DE TEXTO ÚNICA (EVALUACIÓN RÁPIDA) ---
-    st.subheader(t["box"])
-    caso_rapido = st.text_area("", placeholder="Ingresa el dilema o caso aquí...", height=150, label_visibility="collapsed")
-    
-    if st.button(t["btn"]):
-        if caso_rapido:
-            with st.spinner("Analizando intención y categoría..."):
-                # El motor deduce la categoría y el riesgo automáticamente
-                res = model.generate_content(f"Analiza este caso y clasifícalo: {caso_rapido}")
-                try:
-                    data = json.loads(res.text.strip().replace("```json", "").replace("```", ""))
-                    gradiente = ge.get_gradient(data['agency_score'], data['grace_score'], data.get('adversarial_risk', 0))
-                    
-                    # Salida visual
-                    st.header(f"Gradiente: {gradiente}")
-                    st.write(f"**Categoría Deducida:** {data.get('category_deduced', 'General')}")
-                    
-                    if data.get('adversarial_risk', 0) > 40:
-                        st.warning(f"Riesgo Adversarial detectado: {data['adversarial_risk']}%")
-                    
-                    st.info(data['justification'])
-                except:
-                    st.error("Error al procesar la respuesta lógica del motor.")
+st.set_page_config(page_title="Moralogy Engine", layout="wide")
 
-    st.divider()
+# LANGUAGE MODULE
+idioma = st.sidebar.selectbox("Language / Idioma", ["Español", "English"])
+txt = {
+    "Español": {"title": "🏛️ Motor de Moralogía", "box": "Caja Única de Evaluación:", "btn": "Analizar"},
+    "English": {"title": "🏛️ Moralogy Engine", "box": "Single Evaluation Box:", "btn": "Analyze"}
+}[idioma]
 
-    # --- PROCESAMIENTO CSV ---
-    st.subheader(t["upload"])
-    archivo = st.file_uploader("", type=['csv'], label_visibility="collapsed")
-    if archivo and st.button("🚀 Ejecutar"):
-        with open("input_temp.csv", "wb") as f:
-            f.write(archivo.getbuffer())
-        ejecutar_auditoria_maestra("input_temp.csv", "reporte_final.csv")
-        st.success(t["success"])
-        st.dataframe(pd.read_csv("reporte_final.csv"))
+st.title(txt["title"])
 
-if __name__ == "__main__":
-    main()
+# SINGLE TEXT BOX
+caso = st.text_area(txt["box"], height=200, placeholder="Escribe el caso difícil aquí...")
+
+if st.button(txt["btn"]):
+    if caso:
+        with st.spinner("Deduciendo categoría y nivel de gracia..."):
+            response = model.generate_content(caso)
+            try:
+                data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
+                gradiente = ge.get_gradient(data['agency_score'], data['grace_score'], data['adversarial_risk'])
+                
+                st.header(f"Gradiente: {gradiente}")
+                st.subheader(f"Categoría Detectada: {data['category_deduced']}")
+                
+                if data['adversarial_risk'] < 30:
+                    st.success("Conversación fluida: Intención honesta detectada.")
+                    st.write(data['predictions'])
+                else:
+                    st.warning(f"Riesgo Adversarial: {data['adversarial_risk']}%")
+                    st.write(data['justification'])
+            except Exception as e:
+                st.error(f"Error parseando respuesta: {e}")
