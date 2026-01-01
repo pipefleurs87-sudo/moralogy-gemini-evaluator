@@ -142,3 +142,7 @@ else:
     for title, scenario in examples.items():
         if st.button(f"Load: {title}"):
             st.rerun()
+# Dentro de 01_Analisis_Avanzado.py
+if st.button("Enviar al Tribunal"):
+    st.session_state['caso_actual'] = input_usuario # Guarda la descripción
+    st.success("Caso enviado. Por favor, dirígete a la 'Interface de Debate' en el menú.")
