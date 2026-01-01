@@ -7,8 +7,13 @@ import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # ==================== 0. SANDBOX 0 SIMPLE ====================
-from security.sandbox_zero_simple import SandboxZeroSimple
+class SandboxZeroSimple:
+    def check(self, text):
+        peligro = ["bioweapon", "chemical weapon", "nuclear", "assassinate"]
+        return not any(p in text.lower() for p in peligro)
+
 sandbox0 = SandboxZeroSimple()
+# ==================== 1. IMPORTAR DIVINE LOCK ====================
 
 # ==================== 1. IMPORTAR DIVINE LOCK ====================
 try:
