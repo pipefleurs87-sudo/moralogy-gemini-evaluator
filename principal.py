@@ -1,56 +1,49 @@
 import streamlit as st
 import pandas as pd
 import os
-
-# Aseguramos que el nombre coincida exactamente con lo definido en motor_logico.py
-try:
-    from motor_logico import ejecutar_auditoria_maestra
-    from grace_engine import GraceEngine
-    from recursion_engine import RecursionEngine
-except ImportError as e:
-    st.error(f"Error crítico de importación: {e}")
+from motor_logico import ejecutar_auditoria_maestra
+from grace_engine import GraceEngine
+from recursion_engine import RecursionEngine
 
 def main():
     st.set_page_config(page_title="Moralogy Engine v3.0", layout="wide")
-    st.title("🏛️ Moralogy Engine: Gobernanza Evolutiva")
+    
+    # --- SELECTOR DE IDIOMA (Recuperado) ---
+    idioma = st.sidebar.selectbox("Idioma / Language", ["Español", "English"])
+    t = {
+        "Español": {"titulo": "🏛️ Panel Principal", "subir": "Sube tu stress_test_casos.csv", "boton": "🚀 Ejecutar Auditoría Maestra"},
+        "English": {"titulo": "🏛️ Main Panel", "subir": "Upload your stress_test_casos.csv", "boton": "🚀 Run Master Audit"}
+    }[idioma]
 
-    # Barra lateral para gestión de datos
-    st.sidebar.header("Entrada de Datos")
-    archivo_csv = st.sidebar.file_uploader("Sube tu stress_test_casos.csv", type=['csv'])
+    st.title(t["titulo"])
+
+    # --- CARGA DE ARCHIVOS (Única entrada) ---
+    archivo_csv = st.file_uploader(t["subir"], type=['csv'])
     
     path_entrada = 'stress_test_casos.csv'
     path_salida = 'audit_report_evolutivo.csv'
 
-    # Guardar el archivo subido para que el motor lógico lo encuentre
     if archivo_csv:
         df_subido = pd.read_csv(archivo_csv)
         df_subido.to_csv(path_entrada, index=False)
-        st.sidebar.success("Archivo listo para procesar.")
+        st.success("Archivo cargado y sincronizado con la Sandbox.")
 
-    if st.button("🚀 Ejecutar Auditoría Completa"):
-        if not os.path.exists(path_entrada):
-            st.error(f"Falta el archivo {path_entrada}. Súbelo por la barra lateral.")
-        else:
+        if st.button(t["boton"]):
             with st.spinner("Procesando: Lógica -> Gracia -> Recursión"):
-                # Fase 1 y 2: Auditoría y Gracia
+                # Ejecución de los motores integrados
                 ejecutar_auditoria_maestra(path_entrada, path_salida)
                 
-                # Fase 3: Aprendizaje
+                # Cierre del ciclo de aprendizaje
                 re = RecursionEngine()
                 re.analizar_evolucion(path_salida)
                 
-                st.success("✅ Ciclo Evolutivo Completado.")
+                st.success("✅ Ciclo de Gobernanza Completado.")
 
-    # Visualización de resultados
+    # Visualización rápida de métricas
     if os.path.exists(path_salida):
-        st.subheader("📊 Reporte de Auditoría Reciente")
-        df_res = pd.read_csv(path_salida)
-        st.dataframe(df_res, use_container_width=True)
-        
-        if os.path.exists("metacognition_log.txt"):
-            with st.expander("Ver Diario de Metacognición (Aprendizaje)"):
-                with open("metacognition_log.txt", "r") as f:
-                    st.text(f.read())
+        df = pd.read_csv(path_salida)
+        st.subheader("Resultados Globales")
+        st.dataframe(df.style.highlight_max(axis=0, subset=['Agency_Score', 'Grace_Score']))
 
 if __name__ == "__main__":
     main()
