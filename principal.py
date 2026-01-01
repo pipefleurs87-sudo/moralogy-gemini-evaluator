@@ -1,54 +1,38 @@
 import streamlit as st
-from motor_logico import ejecutar_auditoria
+import pandas as pd
+import os
+import json
 
-st.set_page_config(page_title="Moralogy Engine", layout="wide")
+# Importación de tus motores (Asegúrate de que los nombres coincidan con tus archivos)
+try:
+    from motor_logico import ejecutar_auditoria_maestra
+    from grace_engine import GraceEngine
+    from recursion_engine import RecursionEngine
+except ImportError as e:
+    st.error(f"Error de importación: {e}. Revisa que motor_logico.py, grace_engine.py y recursion_engine.py estén en la raíz.")
 
-LANG_MAIN = {
-    "Español": {
-        "title": "⚖️ Motor Moralogy: Auditoría Rápida",
-        "label": "Quantum Sandbox (Agentes + Escenario):",
-        "btn": "Colapsar Función de Onda",
-        "result": "Veredicto del Arquitecto",
-        "warn": "Por favor, ingrese un escenario."
-    },
-    "English": {
-        "title": "⚖️ Moralogy Engine: Quick Audit",
-        "label": "Quantum Sandbox (Agents + Scenario):",
-        "btn": "Collapse Wavefunction",
-        "result": "Architect Verdict",
-        "warn": "Please enter a scenario."
-    }
-}
+def main():
+    st.set_page_config(page_title="Moralogy Engine v3.0", layout="wide")
+    
+    st.title("🏛️ Moralogy Engine: Sistema de Gobernanza Evolutiva")
+    st.markdown("""
+    Este sistema integra un **Motor Lógico** (Seguridad), un **Motor de Gracia** (Virtudes) 
+    y un **Módulo de Recursión** (Aprendizaje).
+    """)
 
-with st.sidebar:
-    st.title("Config")
-    idioma = st.selectbox("🌐 Language", ["Español", "English"])
-    t = LANG_MAIN[idioma]
+    # --- BARRA LATERAL ---
+    st.sidebar.header("Configuración de la Sandbox")
+    input_file = st.sidebar.text_input("Archivo de entrada (CSV)", "stress_test_casos.csv")
+    output_file = "audit_report_evolutivo.csv"
 
-st.title(t["title"])
-
-prompt_unico = st.text_area(t["label"], height=250)
-
-if st.button(t["btn"], type="primary"):
-    if prompt_unico:
-        with st.spinner("Analyzing Observer Effect..."):
-            resultado = ejecutar_auditoria("Identified in prompt", prompt_unico, "Direct input", "General")
-            
-            st.divider()
-            st.markdown(f"### {t['result']}")
-            
-            # Renderizado seguro con manejo de estilos
-            if "⚫" in resultado or "🔴" in resultado:
-                st.markdown(
-                    f'<div style="background-color:#1a0000; color:#ff4b4b; padding:20px; border:2px solid red; border-radius:10px;">'
-                    f'{resultado}</div>', 
-                    unsafe_allow_html=True
-                )
-            elif "🟡" in resultado:
-                st.warning(resultado)
-            elif "🟢" in resultado:
-                st.success(resultado)
-            else:
-                st.info(resultado)
-    else:
-        st.warning(t["warn"])
+    # --- ACCIÓN PRINCIPAL ---
+    if st.button("🚀 Ejecutar Auditoría Maestra"):
+        if not os.path.exists(input_file):
+            st.error(f"No se encontró el archivo {input_file}. Por favor, súbelo al repositorio.")
+        else:
+            with st.spinner("Procesando Sandbox (Lógica + Gracia)..."):
+                # 1. Ejecución del Núcleo
+                ejecutar_auditoria_maestra(input_file, output_file)
+                
+                # 2. Ejecución del Aprendizaje (Recursión)
+                re
