@@ -6,6 +6,10 @@ import sys
 # Agregar el directorio actual al path para imports
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
+# ==================== 0. SANDBOX 0 SIMPLE ====================
+from security.sandbox_zero_simple import SandboxZeroSimple
+sandbox0 = SandboxZeroSimple()
+
 # ==================== 1. IMPORTAR DIVINE LOCK ====================
 try:
     from divine_lock import create_divine_lock
