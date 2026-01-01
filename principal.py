@@ -10,6 +10,13 @@ from motor_logico import model, ge, get_emergent_philosophy_stats
 
 st.set_page_config(page_title="Moralogy Engine", layout="wide", page_icon="🏛️")
 
+# Integración de Agencia Moral (opcional - no modifica código existente)
+try:
+    from integracion_facil import integrar_con_motor_logico
+    integrador_agencia = integrar_con_motor_logico()
+    st.sidebar.success("✅ Agencia Moral Activada")
+except ImportError:
+    st.sidebar.info("ℹ️ Módulo de Agencia Moral no disponible")
 # Language selection
 idioma = st.sidebar.selectbox("Language / Idioma", ["English", "Español"])
 
