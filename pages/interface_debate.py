@@ -67,3 +67,9 @@ try:
     iniciar_debate()
 except Exception as e:
     st.error(f"Error en el motor de debate: {e}")
+if st.button("🧹 Iniciar Nuevo Juicio"):
+    # Limpiamos todo para empezar de cero
+    del st.session_state['caso_actual']
+    st.session_state.paso_debate = 1
+    st.session_state.velo_activo = True
+    st.rerun()
