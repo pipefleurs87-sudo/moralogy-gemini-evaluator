@@ -154,11 +154,13 @@ st.title("🔬 Análisis Avanzado de Moralogía")
 descripcion_problema = st.text_area("Describa el dilema o el impacto en el centímetro cuadrado:", 
                                   placeholder="Ej: Optimización energética en zona A-1...")
 
-if st.button("⚖️ Enviar al Tribunal de Adversarios"):
-    if descripcion_problema:
-        # AQUÍ SE CREA EL PUENTE:
-        st.session_state['caso_actual'] = descripcion_problema
-        st.success("✅ Caso registrado con éxito.")
-        st.info("Ahora diríjase a la 'Interface de Debate' en el menú de la izquierda.")
+# Asegúrate de que el st.text_area use este nombre exacto:
+dilema_texto = st.text_area("Enter the ethical dilemma or interaction:")
+
+if st.button("Enviar al Tribunal"):
+    if dilema_texto:
+        # Aquí corregimos el NameError: usamos dilema_texto
+        st.session_state['caso_actual'] = dilema_texto
+        st.success("✅ Caso enviado al Tribunal de Adversarios.")
     else:
-        st.error("Por favor, ingrese una descripción antes de continuar.")
+        st.error("Por favor, escribe un dilema primero.")
