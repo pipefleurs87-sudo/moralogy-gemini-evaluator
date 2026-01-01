@@ -237,3 +237,13 @@ with tab4:
 # Footer
 st.divider()
 st.caption(f"Agencia Moral Dashboard • {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.subheader("⚖️ Péndulo de Calibración Ontológica")
+col_p1, col_p2 = st.columns([3, 1])
+
+with col_p1:
+    # Una barra que muestra la tensión actual
+    st.slider("Tensión del Sistema (Rigor vs Apertura)", 0.0, 1.0, status['tension'], disabled=True)
+    st.info(status['recommendation'])
+
+with col_p2:
+    st.metric("Estado del Péndulo", status['state'])
