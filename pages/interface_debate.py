@@ -1,103 +1,50 @@
 import streamlit as st
 import time
 
-# Configuración de página
-st.set_page_config(page_title="Moralogy: Interface de Debate", layout="wide")
+st.set_page_config(page_title="Tribunal Interactivo", layout="wide")
 
-
-# Diccionario de idiomas
-idiomas = {
-    "Español": {
-        "titulo": "🏛️ Tribunal de Tensión",
-        "esceptico": "Escéptico Físico",
-        "agencia": "Defensor de Agencia",
-        "armonia": "Corrector de Armonía",
-        "velo_msg": "🚨 VELO DE IGNORANCIA ACTIVO",
-        "btn_velo": "🔓 LEVANTAR VELO",
-        "consenso": "✅ CONSENSO LOGRADO"
-    },
-    "English": {
-        "titulo": "🏛️ Tension Tribunal",
-        "esceptico": "Physical Skeptic",
-        "agencia": "Agency Defender",
-        "armonia": "Harmony Corrector",
-        "velo_msg": "🚨 VEIL OF IGNORANCE ACTIVE",
-        "btn_velo": "🔓 LIFT THE VEIL",
-        "consenso": "✅ CONSENSUS REACHED"
-    }
-}
-
-# Selector en la barra lateral
-lang = st.sidebar.selectbox("🌐 Idioma / Language", ["Español", "English"])
-t = idiomas[lang] # Traducciones activas
-
-# Ahora usa 't' para los textos, por ejemplo:
-st.title(t["titulo"])def iniciar_debate():
-    st.title("🏛️ Tribunal de Tensión: Panel de Adversarios")
-    st.markdown("---")
-
-    # --- NUEVA LÓGICA DE CONEXIÓN ---
-    # Recuperamos el caso de la página 'Analisis Avanzado'
-    # Si no existe, usamos un valor por defecto para evitar errores.
-    caso_real = st.session_state.get('caso_actual', "Análisis de Estabilidad en el Centímetro Cuadrado")
-
-    # Inicialización de estados
+def iniciar_debate_interactivo():
+    st.title("🏛️ Tribunal de Tensión: Diálogo Adversarial")
+    
+    # --- MEMORIA DEL CHAT ---
+    if 'historial_debate' not in st.session_state:
+        st.session_state.historial_debate = []
     if 'paso_debate' not in st.session_state:
         st.session_state.paso_debate = 1
-    if 'velo_activo' not in st.session_state:
-        st.session_state.velo_activo = True
 
-    # Monitor de Poder de Voto
+    # Monitor de Poder
     c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Escéptico Físico", "30%", delta="Entropía", delta_color="inverse")
-    with c2:
-        st.metric("Defensor de Agencia", "30%", delta="Soberanía Usuario")
-    with c3:
-        st.metric("Corrector de Armonía", "40%", delta="Poder de Puche")
+    c1.metric("Físico", "30%")
+    c2.metric("Agencia", "30%")
+    c3.metric("Armonía", "40%")
 
-    st.write("---")
+    st.divider()
 
-    # Contenedor del debate en tiempo real
-    chat = st.container()
+    # --- MOSTRAR HISTORIAL ---
+    for msg in st.session_state.historial_debate:
+        with st.chat_message(msg["role"], avatar=msg["avatar"]):
+            st.write(f"**{msg['autor']}:** {msg['content']}")
 
-    with chat:
-        for i in range(1, st.session_state.paso_debate + 1):
-            # MIRA AQUÍ: Ahora el Motor Noble menciona el 'caso_real'
-            with st.chat_message("assistant", avatar="🏛️"):
-                st.write(f"**Iteración {i} (Noble):** Propongo resolución para: *'{caso_real}'*.")
-            
-            # Réplica del Adversario con Velo
-            if st.session_state.velo_activo and i >= 3:
-                st.error(f"🚨 **VELO DE IGNORANCIA ACTIVO:** No puedo validar el costo físico de: *'{caso_real}'*.")
-                if st.button("🔓 LEVANTAR VELO (Autorización)"):
-                    st.session_state.velo_activo = False
-                    st.session_state.paso_debate += 1
-                    st.rerun()
-                return 
+    # --- INPUT DEL USUARIO (Interactividad) ---
+    prompt = st.chat_input("Interpela al Tribunal (ej: ¿Por qué la entropía es tan alta?)...")
+    
+    if prompt:
+        # 1. Tu mensaje
+        st.session_state.historial_debate.append({"role": "user", "avatar": "👤", "autor": "Soberano", "content": prompt})
+        
+        # 2. Respuesta Triple (Simulada o vía API)
+        # Aquí el "Escéptico" siempre será duro, el "Defensor" cauteloso y la "Armonía" conciliadora.
+        respuestas = [
+            {"role": "assistant", "avatar": "🔴", "autor": "Escéptico", "content": f"Tu pregunta '{prompt}' ignora el colapso térmico inminente."},
+            {"role": "assistant", "avatar": "🔵", "autor": "Armonía", "content": f"Veo en '{prompt}' un camino hacia la Gema Lógica."}
+        ]
+        st.session_state.historial_debate.extend(respuestas)
+        st.rerun()
 
-            # Si el velo cayó, la respuesta es personalizada
-            if not st.session_state.velo_activo and i >= 3:
-                with st.chat_message("user", avatar="⚖️"):
-                    st.write(f"**Iteración {i} (Adversario):** Datos de entropía recibidos para *'{caso_real}'*. Armonía ejerce su 40% de poder.")
+    # Botón de reinicio seguro (corrigiendo el error anterior)
+    if st.button("🧹 Nuevo Juicio"):
+        st.session_state.historial_debate = []
+        st.session_state.pop('caso_actual', None)
+        st.rerun()
 
-        # Controles de flujo
-        if st.session_state.paso_debate < 5:
-            if st.button("Siguiente Ronda de Debate ➡️"):
-                st.session_state.paso_debate += 1
-                st.rerun()
-        else:
-            st.success(f"✅ **CONSENSO LOGRADO:** Gema Lógica generada para el caso estudiado.")
-            st.balloons()
-
-# Ejecución
-try:
-    iniciar_debate()
-except Exception as e:
-    st.error(f"Error en el motor de debate: {e}")
-if st.button("🧹 Iniciar Nuevo Juicio"):
-    # Usamos .pop con None para evitar el KeyError si la clave no existe
-    st.session_state.pop('caso_actual', None) 
-    st.session_state.paso_debate = 1
-    st.session_state.velo_activo = True
-    st.rerun()
+iniciar_debate_interactivo()
