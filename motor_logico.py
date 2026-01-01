@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from datetime import datetime
 from grace_engine import GraceEngine
+from prohibited_domains import ProhibitedDomainsLayer  # ← LÍNEA NUEVA
 
 # Setup API
 try:
