@@ -1,4 +1,9 @@
-# pages/05_Agencia_Moral.py
+if 'estado' not in st.session_state:
+    st.session_state['estado'] = {
+        'total_actos_nobles': 0, 
+        'agencia_actual': 110.0,
+        'actos': []
+    }# pages/05_Agencia_Moral.py
 import streamlit as st
 import json
 from datetime import datetime
