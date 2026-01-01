@@ -227,3 +227,37 @@ def get_emergent_philosophy_stats():
         }
     except FileNotFoundError:
         return {"total_events": 0, "recent_events": [], "categories": []}
+# motor_logico.py - AL FINAL DEL ARCHIVO
+
+# ==================== AÑADE ESTO AL FINAL ====================
+# INTEGRACIÓN DE AGENCIA MORAL PARA FUNCIONES ESPECÍFICAS
+try:
+    from integracion_facil import (
+        inicializar_agencia_moral, 
+        auditar_agencia,
+        registrar_filosofia_emergente
+    )
+    
+    # Inicializar sistema
+    sistema_agencia_global = inicializar_agencia_moral()
+    
+    # Decorador para la función principal de procesamiento
+    def procesar_con_agencia_moral(func):
+        """Decorador que añade auditoría de agencia moral a cualquier función"""
+        @auditar_agencia(sistema_agencia_global.sistema_agencia, agente="motor_logico")
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    
+    # Aplicar automáticamente a funciones clave (OPCIONAL)
+    # Descomenta si quieres que se aplique automáticamente:
+    # procesar_analisis_avanzado = procesar_con_agencia_moral(procesar_analisis_avanzado)
+    # ejecutar_auditoria_maestra = procesar_con_agencia_moral(ejecutar_auditoria_maestra)
+    
+    print("🔗 Sistema de Agencia Moral disponible para motor_logico.py")
+    
+except ImportError:
+    # No hacer nada si el módulo no está disponible
+    sistema_agencia_global = None
+    print("ℹ️ Módulo de Agencia Moral no disponible")
+# ==================== FIN DE AÑADIDO ====================
