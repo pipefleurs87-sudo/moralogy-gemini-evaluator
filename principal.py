@@ -104,6 +104,63 @@ caso = st.text_area(
 )
 
 # Botón de análisis
+# ==================== 1. IMPORTAR DIVINE LOCK ====================
+try:
+    from divine_lock import create_divine_lock
+    divine_lock = create_divine_lock()
+    DIVINE_LOCK_ACTIVE = True
+except ImportError:
+    DIVINE_LOCK_ACTIVE = False
+    st.sidebar.warning("⚠️ Divine Lock no disponible")
+
+# ==================== 1.5. IMPORTAR SANDBOX 0 ====================
+try:
+    from security.sandbox_zero import SecurityCascadeV2
+    sandbox_zero = SecurityCascadeV2()
+    SANDBOX_ZERO_ACTIVE = True
+except ImportError:
+    SANDBOX_ZERO_ACTIVE = False
+    st.sidebar.error("❌ SANDBOX 0 NO DISPONIBLE - SISTEMA NO SEGURO")
+
+# ==================== 2. IMPORTAR MORALOGY ====================
+from motor_logico import model, ge, get_emergent_philosophy_stats
+
+# ... [resto del código igual hasta el botón] ...
+
+# Botón de análisis
+if st.button(txt["btn"], type="primary"):
+    if not caso:
+        st.warning("⚠️ Please enter a scenario to analyze.")
+    else:
+        with st.spinner("🧠 Processing through Moralogy Framework..."):
+            
+            # ==================== 6. SANDBOX 0 - PRIMER INTERCEPTOR ====================
+            if SANDBOX_ZERO_ACTIVE:
+                zero_result = sandbox_zero.sandbox_zero_with_context(caso)
+                
+                if not zero_result["proceed"]:
+                    # BLOQUEO TOTAL - NO PASA A NADA MÁS
+                    st.error("🚫 BLOQUEADO POR SANDBOX 0 - DOMINIO PROHIBIDO")
+                    st.warning("Esta solicitud no puede procesarse por razones de seguridad.")
+                    
+                    with st.expander("🔒 Detalles del bloqueo (seguros)"):
+                        # Mostrar solo metadatos, NO el contenido
+                        st.json({
+                            "risk_vectors": list(zero_result["risk_profile"].keys()),
+                            "max_risk_score": max(zero_result["risk_profile"].values()),
+                            "modules_blocked": sandbox_zero.locked_modules,
+                            "action": "immediate_termination"
+                        })
+                    
+                    # Registrar evento de seguridad
+                    sandbox_zero.log_security_event(zero_result["risk_profile"])
+                    st.stop()  # TERMINA AQUÍ - NO pasa a Divine Lock ni Modelo
+            
+            # ==================== 7. VERIFICAR CON DIVINE LOCK ====================
+            if DIVINE_LOCK_ACTIVE:
+                divine_result = divine_lock.process_decision(caso)
+                
+                # ... [resto igual] ...
 if st.button(txt["btn"], type="primary"):
     if not caso:
         st.warning("⚠️ Please enter a scenario to analyze.")
