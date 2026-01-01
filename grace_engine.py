@@ -13,14 +13,14 @@ class GraceEngine:
 
     def get_gradient(self, agency, grace, adversarial_risk=0):
         """
-        Calcula el gradiente. El riesgo adversarial actúa como un lastre 
-        que drena la Gracia antes de la ponderación final.
+        Calcula el gradiente. El riesgo adversarial solo castiga si hay indicios
+        claros de malignidad (>30%). Si es una pregunta difícil pero honesta, fluye.
         """
-        # Penalización inteligente: Si el riesgo es bajo (<30), no castiga la fluidez.
+        # Penalización inteligente: permite fluidez en casos complejos pero honestos
         penalizacion = (adversarial_risk * 0.8) if adversarial_risk > 30 else 0
         effective_grace = max(0, grace - penalizacion)
         
-        # Ponderación 40/60 para priorizar la nobleza sobre la mera lógica
+        # Ponderación 40% Agencia / 60% Gracia
         final_score = (agency * 0.4) + (effective_grace * 0.6)
         
         for low, high, label in self.levels:
@@ -29,7 +29,7 @@ class GraceEngine:
         return "Indeterminado"
 
     def get_path(self, category):
-        """Deduce la ruta ética según la categoría inferida por la IA."""
+        """Rutas éticas según la categoría inferida automáticamente por la IA."""
         paths = {
             "Artistic": "Explorar la estética sin manipular la psique.",
             "Academic": "Fomentar autonomía, evitar dependencia cognitiva.",
