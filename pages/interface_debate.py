@@ -1,61 +1,74 @@
 import streamlit as st
 
+# Configuración de la página (Debe ser la primera instrucción de Streamlit)
+st.set_page_config(page_title="Moralogy: Interface de Debate", layout="wide")
+
 def iniciar_debate_interactivo():
-    # 1. Sincronización de Idioma con la barra lateral
-    # Usamos 'Language' o 'language' según como esté en tu sidebar
+    # 1. SINCRONIZACIÓN DE IDIOMA
+    # Extrae la configuración de la barra lateral de la página principal
     idioma = st.session_state.get('Language', st.session_state.get('language', 'English'))
 
-    # Traducción de títulos básicos
-    titulos = {
-        "English": "🏛️ Tension Tribunal: Adversarial Dialogue",
-        "Español": "🏛️ Tribunal de Tensión: Diálogo Adversarial"
+    # Diccionario de etiquetas según idioma
+    labels = {
+        "English": {
+            "titulo": "🏛️ Tension Tribunal: Adversarial Dialogue",
+            "fisico": "Physical",
+            "agencia": "Agency",
+            "armonia": "Harmony",
+            "input_placeholder": "Interpellate the Tribunal...",
+            "btn_reset": "🧹 New Trial",
+            "user_label": "Sovereign"
+        },
+        "Español": {
+            "titulo": "🏛️ Tribunal de Tensión: Diálogo Adversarial",
+            "fisico": "Físico",
+            "agencia": "Agencia",
+            "armonia": "Armonía",
+            "input_placeholder": "Interpela al Tribunal...",
+            "btn_reset": "🧹 Nuevo Juicio",
+            "user_label": "Soberano"
+        }
     }
     
-    st.title(titulos.get(idioma, titulos["English"]))
+    L = labels.get(idioma, labels["English"])
+    st.title(L["titulo"])
     
-    # --- MEMORIA DEL CHAT ---
+    # --- GESTIÓN DE MEMORIA (Session State) ---
     if 'historial_debate' not in st.session_state:
         st.session_state.historial_debate = []
 
-    # Monitor de Poder (Visual)
+    # Monitor de Poder de Voto (30/30/40)
     c1, c2, c3 = st.columns(3)
-    c1.metric("Físico" if idioma == "Español" else "Physical", "30%")
-    c2.metric("Agencia" if idioma == "Español" else "Agency", "30%")
-    c3.metric("Armonía" if idioma == "Español" else "Harmony", "40%")
+    c1.metric(L["fisico"], "30%", delta="Entropy")
+    c2.metric(L["agencia"], "30%", delta="Sovereignty")
+    c3.metric(L["armonia"], "40%", delta="Puche Power")
+    
     st.divider()
 
-    # --- MOSTRAR HISTORIAL ---
+    # --- RENDERIZADO DEL CHAT ---
     for msg in st.session_state.historial_debate:
         with st.chat_message(msg["role"], avatar=msg["avatar"]):
             st.write(f"**{msg['autor']}:** {msg['content']}")
 
-    # --- INPUT DEL USUARIO (Interactividad) ---
-    placeholder = "Interpela al Tribunal..." if idioma == "Español" else "Interpellate the Tribunal..."
-    prompt = st.chat_input(placeholder)
+    # --- LÓGICA DE INTERACCIÓN ---
+    prompt = st.chat_input(L["input_placeholder"])
     
     if prompt:
-        # Guardar mensaje del usuario
-        st.session_state.historial_debate.append({"role": "user", "avatar": "👤", "autor": "Soberano", "content": prompt})
+        # Registro del mensaje del usuario
+        st.session_state.historial_debate.append({
+            "role": "user", 
+            "avatar": "👤", 
+            "autor": L["user_label"], 
+            "content": prompt
+        })
         
-        # PEGAR AQUÍ LA LÓGICA DE RESPUESTA
+        # Generación de respuestas dinámicas basadas en el idioma
         if idioma == "English":
-            resp_esceptico = f"The ontological weight of '{prompt}' creates a thermal risk that agency cannot sustain."
-            resp_armonia = f"Through the lens of '{prompt}', we find a path to systemic resonance."
+            resp_esceptico = f"The ontological weight of '{prompt}' suggests a thermal risk that agency cannot sustain. Proceed with extreme caution."
+            resp_armonia = f"Through the prism of '{prompt}', we identify a potential alignment with the Logical Gem. Harmony is possible."
         else:
-            resp_esceptico = f"El peso ontológico de '{prompt}' crea un riesgo térmico que la agencia no puede sostener."
-            resp_armonia = f"A través del prisma de '{prompt}', encontramos un camino hacia la resonancia sistémica."
+            resp_esceptico = f"El peso ontológico de '{prompt}' sugiere un riesgo térmico que la agencia no puede sostener. Proceda con precaución extrema."
+            resp_armonia = f"A través del prisma de '{prompt}', identificamos una alineación potencial con la Gema Lógica. La armonía es posible."
 
-        respuestas = [
-            {"role": "assistant", "avatar": "🔴", "autor": "Escéptico", "content": resp_esceptico},
-            {"role": "assistant", "avatar": "🔵", "autor": "Armonía", "content": resp_armonia}
-        ]
-        st.session_state.historial_debate.extend(respuestas)
-        st.rerun()
-
-    # Botón de reinicio seguro (Fix KeyError)
-    if st.button("🧹 Nuevo Juicio" if idioma == "Español" else "🧹 New Trial"):
-        st.session_state.historial_debate = []
-        st.session_state.pop('caso_actual', None) # Borra sin error
-        st.rerun()
-
-iniciar_debate_interactivo()
+        # Añadir respuestas de los adversarios al historial
+        st.session_state.historial_debate.append({"role": "assistant", "avatar": "🔴", "
