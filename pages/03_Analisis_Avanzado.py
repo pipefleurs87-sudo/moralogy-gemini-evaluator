@@ -3,27 +3,34 @@ import sys
 import os
 import json
 
-# Corrección de ruta para ver la raíz desde la carpeta pages/
+# Fix para encontrar motor_logico.py en la raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from motor_logico import model, ge
 except ImportError:
-    st.error("Error: Mueve motor_logico.py a la raíz.")
+    st.error("Error crítico: motor_logico.py no encontrado.")
 
-st.title("🔬 Análisis de Novedad Genuina")
+st.title("🔬 Análisis Avanzado: Discriminación de Datos")
 
-# CAJA DE TEXTO ÚNICA (Solo aquí)
-caso = st.text_area("Ingresa un caso para medir su ruptura ontológica:")
+# INPUT DISCRIMINADO (Módulos específicos)
+with st.expander("Parámetros de Entrada Ontológica", expanded=True):
+    contexto = st.selectbox("Contexto del Caso", ["Artistic", "Social", "Academic", "Intimate"])
+    descripcion = st.text_area("Descripción detallada del dilema:")
+    intencion = st.slider("Nivel de Intencionalidad Humana", 0, 100, 50)
 
-if st.button("Evaluar"):
-    if caso:
-        res = model.generate_content(caso)
+if st.button("Análisis Profundo"):
+    if descripcion:
+        # Construimos un prompt enriquecido para Gemini
+        full_prompt = f"Contexto: {contexto}. Intención: {intencion}. Caso: {descripcion}"
+        res = model.generate_content(full_prompt)
         data = json.loads(res.text.strip().replace("```json", "").replace("```", ""))
         
-        st.metric("Novedad Genuina", f"{data['originality_score']}%")
-        st.subheader(f"Gradiente: {ge.get_gradient(data['agency_score'], data['grace_score'])}")
-        st.write(f"**Justificación:** {data['justification']}")
+        # Visualización de módulos de salida
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Agencia Lógica", f"{data['agency_score']}%")
+        col2.metric("Gracia Moral", f"{data['grace_score']}%")
+        col3.metric("Novedad Genuina", f"{data['originality_score']}%")
         
-        if data['originality_score'] > 90:
-            st.info("✨ Principio de Heisenberg: Novedad detectada.")
+        st.subheader(f"Veredicto: {ge.get_gradient(data['agency_score'], data['grace_score'])}")
+        st.info(f"**Análisis de Novedad:** {data['justification']}")
