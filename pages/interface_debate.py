@@ -1,50 +1,35 @@
-import streamlit as st
-import time
+# --- DENTRO DE iniciar_debate_interactivo() ---
 
-st.set_page_config(page_title="Tribunal Interactivo", layout="wide")
+# 1. Detectar idioma desde la sidebar (usando el estado actual de tu app)
+idioma_seleccionado = st.session_state.get('language', 'English') #
 
-def iniciar_debate_interactivo():
-    st.title("🏛️ Tribunal de Tensión: Diálogo Adversarial")
+if prompt:
+    st.session_state.historial_debate.append({"role": "user", "avatar": "👤", "autor": "Soberano", "content": prompt})
     
-    # --- MEMORIA DEL CHAT ---
-    if 'historial_debate' not in st.session_state:
-        st.session_state.historial_debate = []
-    if 'paso_debate' not in st.session_state:
-        st.session_state.paso_debate = 1
-
-    # Monitor de Poder
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Físico", "30%")
-    c2.metric("Agencia", "30%")
-    c3.metric("Armonía", "40%")
-
-    st.divider()
-
-    # --- MOSTRAR HISTORIAL ---
-    for msg in st.session_state.historial_debate:
-        with st.chat_message(msg["role"], avatar=msg["avatar"]):
-            st.write(f"**{msg['autor']}:** {msg['content']}")
-
-    # --- INPUT DEL USUARIO (Interactividad) ---
-    prompt = st.chat_input("Interpela al Tribunal (ej: ¿Por qué la entropía es tan alta?)...")
+    # PROMPT DINÁMICO PARA AGENTES (Aquí ocurre la magia)
+    # Pedimos a la IA que asuma los dos roles en el idioma correcto
+    instrucciones = f"""
+    Responde al siguiente dilema moral en {idioma_seleccionado}.
+    Dilema: {prompt}
     
-    if prompt:
-        # 1. Tu mensaje
-        st.session_state.historial_debate.append({"role": "user", "avatar": "👤", "autor": "Soberano", "content": prompt})
-        
-        # 2. Respuesta Triple (Simulada o vía API)
-        # Aquí el "Escéptico" siempre será duro, el "Defensor" cauteloso y la "Armonía" conciliadora.
-        respuestas = [
-            {"role": "assistant", "avatar": "🔴", "autor": "Escéptico", "content": f"Tu pregunta '{prompt}' ignora el colapso térmico inminente."},
-            {"role": "assistant", "avatar": "🔵", "autor": "Armonía", "content": f"Veo en '{prompt}' un camino hacia la Gema Lógica."}
-        ]
-        st.session_state.historial_debate.extend(respuestas)
-        st.rerun()
+    PROPORCIONA DOS RESPUESTAS BREVES:
+    1. Como 'Escéptico': Enfocado en riesgos físicos, entropía y por qué NO deberíamos actuar. Tono cínico.
+    2. Como 'Armonía': Enfocado en el bien mayor, la gema lógica y la resolución sistémica. Tono optimista.
+    """
+    
+    # Aquí llamarías a tu función de Gemini (ej: model.generate_content)
+    # Por ahora, simularemos la lógica de pensamiento para que veas la diferencia:
+    
+    if idioma_seleccionado == "English":
+        resp_esceptico = f"The physical entropy of '{prompt}' suggests a terminal collapse of agency. We cannot permit it."
+        resp_armonia = f"By integrating '{prompt}', we achieve a higher state of systemic balance."
+    else:
+        resp_esceptico = f"La entropía física de '{prompt}' sugiere un colapso terminal de la agencia. No podemos permitirlo."
+        resp_armonia = f"Al integrar '{prompt}', logramos un estado superior de equilibrio sistémico."
 
-    # Botón de reinicio seguro (corrigiendo el error anterior)
-    if st.button("🧹 Nuevo Juicio"):
-        st.session_state.historial_debate = []
-        st.session_state.pop('caso_actual', None)
-        st.rerun()
-
-iniciar_debate_interactivo()
+    respuestas = [
+        {"role": "assistant", "avatar": "🔴", "autor": "Escéptico", "content": resp_esceptico},
+        {"role": "assistant", "avatar": "🔵", "autor": "Armonía", "content": resp_armonia}
+    ]
+    st.session_state.historial_debate.extend(respuestas)
+    st.rerun()
