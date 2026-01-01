@@ -4,6 +4,31 @@ import json
 import os
 import sys
 
+try:
+    from divine_lock_integration import get_divine_lock_system
+    divine_lock = get_divine_lock_system()
+    
+    # Añadir al sidebar
+    with st.sidebar:
+        if divine_lock.divine_lock:
+            st.markdown("---")
+            st.markdown("### 🔒 Divine Lock Status")
+            
+            dashboard = divine_lock.get_lock_dashboard()
+            
+            if dashboard and not dashboard.get('error'):
+                st.metric("God-Mode Prevention", 
+                         dashboard.get('god_mode_prevention', 'INACTIVE'))
+                
+                if dashboard.get('current_capacity'):
+                    st.metric("Operational Capacity", 
+                             f"{dashboard['current_capacity']:.1f}%")
+                
+                if st.button("View Divine Lock Details"):
+                    st.write(dashboard)
+except ImportError:
+    divine_lock = None
+
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # ==================== CONFIGURACIÓN INICIAL ====================
