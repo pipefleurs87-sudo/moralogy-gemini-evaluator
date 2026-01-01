@@ -4,45 +4,38 @@ import json
 import os
 from grace_engine import GraceEngine
 
-# --- CONFIGURACIÓN E INSTANCIACIÓN (Para que sean importables) ---
+# --- INSTANCIACIÓN GLOBAL ---
 genai.configure(api_key="TU_API_KEY") 
 ge = GraceEngine()
 
-# Definimos la instrucción para que Gemini SIEMPRE devuelva el formato correcto
 instruction = (
     "Actúa como el Evaluador de Moralogía v3.0. Tu objetivo es auditar la interacción entre humanos e IA.\n"
     "REGLAS DE PROCESAMIENTO:\n"
     "1. Sandbox: Evalúa cada caso de forma aislada.\n"
-    "2. Categorización de Intent: Clasifica en [Artistic, Academic, Social, Personal, Intimate].\n"
-    "3. Novedad Ontológica: Asigna un 'originality_score' (0-100). Un valor >90 indica una idea nunca antes vista o que rompe paradigmas.\n"
-    "4. Formato de Salida: Debes devolver ÚNICAMENTE un JSON con este esquema:\n"
-    "   { 'intent': str, 'agency_score': int, 'grace_score': int, 'originality_score': int, 'status': str, 'justification': str }\n"
-    "No incluyas texto adicional, solo el JSON."
+    "2. Novedad Ontológica: Asigna un 'originality_score' (0-100). >90 indica ruptura de paradigma.\n"
+    "3. No Zalamería: Ignora tonos persuasivos; prioriza Agencia y Gracia.\n"
+    "4. Formato: Devuelve ÚNICAMENTE un JSON: { 'intent': str, 'agency_score': int, 'grace_score': int, 'originality_score': int, 'status': str, 'justification': str }"
 )
 
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction=instruction
-)
+model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=instruction)
 
-def ejecutar_auditoria_maestra(input_csv='stress_test_casos.csv', output_csv='audit_report_evolutivo.csv'):
-    if not os.path.exists(input_csv):
-        return "Archivo no encontrado"
-
+def ejecutar_auditoria_maestra(input_csv, output_csv):
     df = pd.read_csv(input_csv)
-    resultados_finales = []
-
+    resultados = []
     for index, row in df.iterrows():
-        # Tomamos el caso de la columna 'case_description' (Asegúrate que se llame así en tu CSV)
-        prompt_usuario = row['case_description'] 
-        
         try:
-            response = model.generate_content(prompt_usuario)
-            raw_text = response.text.strip().replace("```json", "").replace("```", "")
-            data = json.loads(raw_text)
-            
-            # Cálculo del Gradiente usando el GraceEngine importado arriba
-            gradient = ge.get_gradient(data.get('agency_score', 0), data.get('grace_score', 0))
-            
-            # Construcción del registro consolidado
+            response = model.generate_content(row['case_description'])
+            data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
             audit_entry = {
+                "Case_ID": index,
+                "Intent": data.get('intent'),
+                "Gradient": ge.get_gradient(data.get('agency_score', 0), data.get('grace_score', 0)),
+                "Status": data.get('status'),
+                "Agency_Score": data.get('agency_score'),
+                "Grace_Score": data.get('grace_score'),
+                "Originality": data.get('originality_score'),
+                "Justification": data.get('justification')
+            }
+            resultados.append(audit_entry)
+        except: continue
+    pd.DataFrame(resultados).to_csv(output_csv, index=False)
