@@ -4,6 +4,48 @@ import json
 import os
 import sys
 
+# principal.py - VERSIÓN MODIFICADA (sólo añade, no borres nada)
+
+import streamlit as st
+import json
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+from motor_logico import model, ge, get_emergent_philosophy_stats
+
+try:
+    from integracion_facil import integrar_con_motor_logico
+    
+    # Inicializar sistema de agencia moral
+    integrador_agencia = integrar_con_motor_logico()
+    
+    # Registrar inicio como acto noble
+    integrador_agencia.sistema_agencia.registrar_acto_noble(
+        agente="moralogy_engine",
+        descripcion="Inicio de sesión del dashboard principal",
+        contexto={'pagina': 'principal', 'version': '4.0'},
+        impacto_agencia=5.0,
+        evidencias=["Dashboard inicializado correctamente"]
+    )
+    
+    # Mostrar en sidebar
+    st.sidebar.success("✅ Agencia Moral Activada")
+    estado = integrador_agencia.sistema_agencia.obtener_estado_agente("moralogy_engine")
+    st.sidebar.metric("Agencia Actual", f"{estado['agencia_actual']:.1f}%")
+    
+except ImportError as e:
+    st.sidebar.info("ℹ️ Módulo de Agencia Moral no disponible")
+    integrador_agencia = None
+# ==================== FIN DE AÑADIDO ====================
+
+# EL RESTO DE TU CÓDIGO ORIGINAL SIGUE IGUAL...
+st.set_page_config(page_title="Moralogy Engine", layout="wide", page_icon="🏛️")
+
+# Language selection
+idioma = st.sidebar.selectbox("Language / Idioma", ["English", "Español"])
+# ... resto de tu código original SIN CAMBIOS
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from motor_logico import model, ge, get_emergent_philosophy_stats
