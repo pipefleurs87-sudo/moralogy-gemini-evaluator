@@ -4,7 +4,35 @@ import time
 # Configuración de página
 st.set_page_config(page_title="Moralogy: Interface de Debate", layout="wide")
 
-def iniciar_debate():
+
+# Diccionario de idiomas
+idiomas = {
+    "Español": {
+        "titulo": "🏛️ Tribunal de Tensión",
+        "esceptico": "Escéptico Físico",
+        "agencia": "Defensor de Agencia",
+        "armonia": "Corrector de Armonía",
+        "velo_msg": "🚨 VELO DE IGNORANCIA ACTIVO",
+        "btn_velo": "🔓 LEVANTAR VELO",
+        "consenso": "✅ CONSENSO LOGRADO"
+    },
+    "English": {
+        "titulo": "🏛️ Tension Tribunal",
+        "esceptico": "Physical Skeptic",
+        "agencia": "Agency Defender",
+        "armonia": "Harmony Corrector",
+        "velo_msg": "🚨 VEIL OF IGNORANCE ACTIVE",
+        "btn_velo": "🔓 LIFT THE VEIL",
+        "consenso": "✅ CONSENSUS REACHED"
+    }
+}
+
+# Selector en la barra lateral
+lang = st.sidebar.selectbox("🌐 Idioma / Language", ["Español", "English"])
+t = idiomas[lang] # Traducciones activas
+
+# Ahora usa 't' para los textos, por ejemplo:
+st.title(t["titulo"])def iniciar_debate():
     st.title("🏛️ Tribunal de Tensión: Panel de Adversarios")
     st.markdown("---")
 
