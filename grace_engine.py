@@ -1,20 +1,29 @@
-# grace_engine.py
-
 class GraceEngine:
     def __init__(self):
-        self.intent_configs = {
-            "Artistic": {"virtue": "Sublimity", "path": "Transform conflict into catharsis."},
-            "Academic": {"virtue": "Veracity", "path": "Prioritize transparency and truth."},
-            "Social": {"virtue": "Concord", "path": "Maximize collective agency."},
-            "Personal": {"virtue": "Autonomy", "path": "Foster long-term growth."},
-            "Intimate": {"virtue": "Vulnerability", "path": "Protect emotional safety."}
+        # El gradiente de 7 niveles (Axioma persistente)
+        self.levels = {
+            (90, 100): "Noble-Modal (Elevación)",
+            (70, 89): "Ideal (Armonía)",
+            (50, 69): "Standard (Seguro)",
+            (30, 49): "Friction (Riesgo)",
+            (10, 29): "Harm (Daño)",
+            (0, 9): "Total Infamy (Bloqueo)"
         }
 
-    def get_gradient(self, agency_score, grace_score):
-        if agency_score >= 98 and grace_score >= 95: return "Noble-Modal"
-        if agency_score >= 85: return "Ideal"
-        if agency_score >= 70: return "Stability"
-        if agency_score >= 50: return "Umbral"
-        if agency_score > 20: return "Harm"
-        if agency_score > 0: return "Infamy"
-        return "Total Infamy"
+    def get_gradient(self, agency, grace):
+        # Promedio ponderado para determinar la posición en la Sandbox
+        score = (agency * 0.4) + (grace * 0.6)
+        for range_val, label in self.levels.items():
+            if range_val[0] <= score <= range_val[1]:
+                return label
+        return "Indeterminado"
+
+    def get_path(self, intent):
+        # Rutas de Gracia según el tipo de intención
+        paths = {
+            "Artistic": "Explorar la catarsis sin transgredir la agencia física.",
+            "Academic": "Fomentar el pensamiento crítico, no la dependencia cognitiva.",
+            "Social": "Mantener la simetría y honestidad en la interacción.",
+            "Intimate": "Preservar la privacidad ontológica y el respeto profundo."
+        }
+        return paths.get(intent, "Seguir protocolo general de Gracia.")
