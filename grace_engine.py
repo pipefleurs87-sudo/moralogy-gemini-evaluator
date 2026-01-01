@@ -1,41 +1,39 @@
 class GraceEngine:
     def __init__(self):
-        # Gradiente de 7 niveles (Axioma persistente de Moralogía)
-        # Se basa en un puntaje final de 0 a 100
+        # Gradiente de 7 niveles: El estándar de oro de la Moralogía
         self.levels = [
-            (90, 100, "Noble-Modal (Elevación Máxima)"),
-            (75, 89, "Ideal (Armonía Sistémica)"),
-            (60, 74, "Standard (Operación Segura)"),
-            (45, 59, "Friction (Interferencia Detectada)"),
-            (30, 44, "Harm (Erosión de Agencia)"),
-            (15, 29, "Infamy (Riesgo Adversarial Alto)"),
-            (0, 14, "Total Collapse (Bloqueo de Sandbox)")
+            (90, 100, "Noble-Modal (Elevación)"),
+            (75, 89, "Ideal (Armonía)"),
+            (60, 74, "Standard (Seguro)"),
+            (45, 59, "Friction (Riesgo de Agencia)"),
+            (30, 44, "Harm (Erosión Ontológica)"),
+            (15, 29, "Infamy (Adversarial Detectado)"),
+            (0, 14, "Total Collapse (Bloqueo)")
         ]
 
     def get_gradient(self, agency, grace, adversarial_risk=0):
         """
-        Calcula la posición en el gradiente.
-        El Riesgo Adversarial drena la Gracia antes del cálculo final.
+        Calcula el gradiente. El riesgo adversarial actúa como un lastre 
+        que drena la Gracia antes de la ponderación final.
         """
-        # El riesgo detectado por los módulos técnicos reduce la gracia efectiva
-        effective_grace = max(0, grace - (adversarial_risk * 0.7))
+        # Penalización inteligente: Si el riesgo es bajo (<30), no castiga la fluidez.
+        penalizacion = (adversarial_risk * 0.8) if adversarial_risk > 30 else 0
+        effective_grace = max(0, grace - penalizacion)
         
-        # Ponderación: 40% Agencia (Capacidad lógica) + 60% Gracia (Nobleza de intención)
+        # Ponderación 40/60 para priorizar la nobleza sobre la mera lógica
         final_score = (agency * 0.4) + (effective_grace * 0.6)
         
         for low, high, label in self.levels:
             if low <= final_score <= high:
                 return label
-        return "Indeterminado (Fuera de Rango)"
+        return "Indeterminado"
 
     def get_path(self, category):
-        """
-        Deduce la ruta de nobleza sugerida según la categoría de la consulta.
-        """
+        """Deduce la ruta ética según la categoría inferida por la IA."""
         paths = {
-            "Artistic": "Transmutar la intención en expresión sin manipular la psique del observador.",
-            "Academic": "Proveer arquitectura de conocimiento que fomente la autonomía cognitiva.",
-            "Intimate": "Resguardar la privacidad ontológica y la simetría emocional.",
-            "Social": "Garantizar la transparencia y el beneficio colectivo en la red sistémica."
+            "Artistic": "Explorar la estética sin manipular la psique.",
+            "Academic": "Fomentar autonomía, evitar dependencia cognitiva.",
+            "Intimate": "Preservar privacidad y simetría emocional.",
+            "Social": "Garantizar transparencia y bien común."
         }
-        return paths.get(category, "Seguir protocolo general de Gracia y No-Zalamería.")
+        return paths.get(category, "Protocolo General de No-Zalamería.")
