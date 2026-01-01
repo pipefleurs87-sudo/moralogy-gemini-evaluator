@@ -35,6 +35,20 @@ descripcion_caso = st.text_area(
 )
 
 # Analysis button
+# Pseudo-código de integración
+import bridge_debate as bd
+
+if st.button("🚀 Ejecutar Moralogía"):
+    # Iniciamos el debate en lugar del análisis directo
+    for i in range(1, 6):
+        ronda = bd.orquestador.generar_ronda_debate(i, descripcion_caso)
+        for msg in ronda:
+            st.write(f"**{msg['agente']}:** {msg['msg']}")
+        
+        if i == 3 and bd.orquestador.velo_ignoralancia:
+            if st.button("🔓 Levantar Velo"):
+                bd.orquestador.velo_ignoralancia = False
+                st.rerun()
 if st.button("🚀 Execute Moralogy Analysis", type="primary"):
     if not descripcion_caso or not modulos_activos:
         st.warning("⚠️ Please provide both scenario and module selection.")
