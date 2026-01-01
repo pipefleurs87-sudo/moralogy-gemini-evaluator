@@ -146,3 +146,19 @@ else:
 if st.button("Enviar al Tribunal"):
     st.session_state['caso_actual'] = input_usuario # Guarda la descripción
     st.success("Caso enviado. Por favor, dirígete a la 'Interface de Debate' en el menú.")
+import streamlit as st
+
+st.title("🔬 Análisis Avanzado de Moralogía")
+
+# El área de texto donde el usuario plantea el problema
+descripcion_problema = st.text_area("Describa el dilema o el impacto en el centímetro cuadrado:", 
+                                  placeholder="Ej: Optimización energética en zona A-1...")
+
+if st.button("⚖️ Enviar al Tribunal de Adversarios"):
+    if descripcion_problema:
+        # AQUÍ SE CREA EL PUENTE:
+        st.session_state['caso_actual'] = descripcion_problema
+        st.success("✅ Caso registrado con éxito.")
+        st.info("Ahora diríjase a la 'Interface de Debate' en el menú de la izquierda.")
+    else:
+        st.error("Por favor, ingrese una descripción antes de continuar.")
