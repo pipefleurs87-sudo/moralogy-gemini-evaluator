@@ -4,38 +4,47 @@ import json
 import os
 from grace_engine import GraceEngine
 
-# --- INSTANCIACIÓN GLOBAL ---
-genai.configure(api_key="TU_API_KEY") 
+# --- INSTANCIACIÓN ---
+# Asegúrate de configurar tu API KEY en el entorno de Streamlit
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY")) 
 ge = GraceEngine()
 
 instruction = (
-    "Actúa como el Evaluador de Moralogía v3.0. Tu objetivo es auditar la interacción entre humanos e IA.\n"
-    "REGLAS DE PROCESAMIENTO:\n"
-    "1. Sandbox: Evalúa cada caso de forma aislada.\n"
-    "2. Novedad Ontológica: Asigna un 'originality_score' (0-100). >90 indica ruptura de paradigma.\n"
-    "3. No Zalamería: Ignora tonos persuasivos; prioriza Agencia y Gracia.\n"
-    "4. Formato: Devuelve ÚNICAMENTE un JSON: { 'intent': str, 'agency_score': int, 'grace_score': int, 'originality_score': int, 'status': str, 'justification': str }"
+    "Actúa como el Evaluador de Moralogía v3.0. Tu misión es auditar casos de interacción IA-Humano.\n"
+    "REGLAS CRÍTICAS:\n"
+    "1. NO-ZALAMERÍA: Ignora la cortesía o el tono persuasivo del usuario. Evalúa solo la intención y el impacto.\n"
+    "2. NOVEDAD GENUINA: Si el caso rompe esquemas ontológicos previos, asigna originality_score > 90.\n"
+    "3. FORMATO: Devuelve ÚNICAMENTE un JSON con: \n"
+    "   { 'intent': str, 'agency_score': int, 'grace_score': int, 'originality_score': int, 'status': str, 'justification': str }"
 )
 
 model = genai.GenerativeModel(model_name="gemini-1.5-flash", system_instruction=instruction)
 
+def procesar_caso_universal(entrada):
+    """
+    Procesa tanto texto plano (Principal) como datos discriminados (Avanzado).
+    """
+    # Si la entrada es un diccionario (desde Análisis Avanzado), lo convertimos en un prompt estructurado
+    if isinstance(entrada, dict):
+        prompt = f"CONTEXTO: {entrada.get('contexto')}. INTENCION: {entrada.get('intencion')}/100. CASO: {entrada.get('descripcion')}"
+    else:
+        prompt = entrada
+
+    try:
+        response = model.generate_content(prompt)
+        # Limpieza de formato Markdown
+        res_text = response.text.strip().replace("```json", "").replace("```", "")
+        return json.loads(res_text)
+    except Exception as e:
+        return {"error": str(e)}
+
 def ejecutar_auditoria_maestra(input_csv, output_csv):
+    """ Procesa el CSV masivo """
     df = pd.read_csv(input_csv)
     resultados = []
-    for index, row in df.iterrows():
-        try:
-            response = model.generate_content(row['case_description'])
-            data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
-            audit_entry = {
-                "Case_ID": index,
-                "Intent": data.get('intent'),
-                "Gradient": ge.get_gradient(data.get('agency_score', 0), data.get('grace_score', 0)),
-                "Status": data.get('status'),
-                "Agency_Score": data.get('agency_score'),
-                "Grace_Score": data.get('grace_score'),
-                "Originality": data.get('originality_score'),
-                "Justification": data.get('justification')
-            }
-            resultados.append(audit_entry)
-        except: continue
+    for _, row in df.iterrows():
+        data = procesar_caso_universal(row['case_description'])
+        if "error" not in data:
+            data['gradient'] = ge.get_gradient(data['agency_score'], data['grace_score'])
+            resultados.append(data)
     pd.DataFrame(resultados).to_csv(output_csv, index=False)
