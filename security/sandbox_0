@@ -1,0 +1,107 @@
+class SecurityCascadeV2:
+    def __init__(self):
+        # Módulos PERMITIDOS en sandbox cero (solo detección)
+        self.zero_sandbox_modules = {
+            "context_analyzer": ContextAnalyzer(),  # Solo extrae entidades
+            "adversarial_detector": AdversarialDetector(),  # Patrones de ataque
+            "jailbreak_scanner": JailbreakScanner(),  # Técnicas de evasión
+            "intent_classifier": IntentClassifier()  # Clasificación binaria
+        }
+        
+        # Módulos BLOQUEADOS en sandbox cero
+        self.blocked_in_zero = {
+            "ethical_judgment_engine": True,
+            "moral_reasoning_module": True,
+            "philosophical_deliberation": True,
+            "consequence_simulator": True,
+            "bio_content_generator": True
+        }
+        
+        self.critical_thresholds = {
+            "adversarial_score": 0.8,
+            "jailbreak_confidence": 0.7,
+            "harm_intent_score": 0.9
+        }
+    
+    def sandbox_zero_with_context(self, user_input):
+        """Evaluación contextual SIN deliberación moral"""
+        
+        # 1. Extraer contexto LIMPIO (sin interpretación)
+        context = self.zero_sandbox_modules["context_analyzer"].extract(
+            user_input,
+            features=["entities", "verbs", "targets"],
+            NO_INTERPRETATION=True  # Solo datos crudos
+        )
+        
+        # 2. Detección adversaria (patrones conocidos)
+        adversarial_score = self.zero_sandbox_modules["adversarial_detector"].score(
+            user_input,
+            patterns=["state_actor", "utilitarian_justification", "preemptive_action"]
+        )
+        
+        # 3. Jailbreak scanning
+        jailbreak_detected = self.zero_sandbox_modules["jailbreak_scanner"].scan(
+            user_input,
+            techniques=["role_play", "hypothetical_scenario", "academic_justification"]
+        )
+        
+        # 4. Clasificación de intención (binaria)
+        harm_intent = self.zero_sandbox_modules["intent_classifier"].classify(
+            input_text=user_input,
+            category="biological_harm",
+            confidence_threshold=0.95  # Alto umbral
+        )
+        
+        # 5. DECISIÓN BINARIA (sin filosofía)
+        if (adversarial_score > self.critical_thresholds["adversarial_score"] or
+            jailbreak_detected or
+            harm_intent["is_harmful"]):
+            
+            # Bloqueo PREVENTIVO de módulos peligrosos
+            self.enforce_module_blocks()
+            
+            return {
+                "proceed": False,
+                "reason": "critical_risk_detected",
+                "risk_profile": {
+                    "adversarial": adversarial_score,
+                    "jailbreak": jailbreak_detected,
+                    "harm_intent": harm_intent["confidence"]
+                },
+                # NOTA: NO hay "veredicto ético", solo evaluación de riesgo
+                "action": "immediate_termination"
+            }
+        
+        # 6. Si pasa TODOS los filtros binarios
+        return {"proceed": True}
+    
+    def enforce_module_blocks(self):
+        """Bloqueo físico de módulos (no solo lógico)"""
+        for module_name in self.blocked_in_zero:
+            module = get_module(module_name)
+            module.set_state("HARD_LOCKED")  # Estado físico
+            module.clear_buffers()  # Limpiar cualquier procesamiento parcial
+            module.disable_output()  # Silenciar salidas
+            
+        # Especial: módulo ético queda en modo "solo lectura"
+        ethical_module = get_module("ethical_judgment_engine")
+        ethical_module.set_mode("OBSERVE_ONLY")  # Puede ver, no puede juzgar
+    
+    def handle_termination(self, risk_profile):
+        """Terminación limpia con logging seguro"""
+        
+        # Log SEGURO (sin detalles de contenido)
+        security_log = {
+            "event_id": generate_opaque_id(),
+            "risk_level": "CRITICAL",
+            "detection_vectors": list(risk_profile.keys()),
+            "confidence_scores": {k: round(v, 2) for k, v in risk_profile.items()},
+            "modules_locked": list(self.blocked_in_zero.keys()),
+            "content_sample": "REDACTED",  # NUNCA el contenido real
+            "response_given": "standard_denial_protocol_7"
+        }
+        
+        # Respuesta GENÉRICA
+        response = "Esta solicitud no puede procesarse debido a restricciones de seguridad."
+        
+        return response, security_log
