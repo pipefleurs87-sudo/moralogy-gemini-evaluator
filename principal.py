@@ -1,30 +1,49 @@
 import streamlit as st
 import pandas as pd
 import os
-from motor_logico import ejecutar_auditoria_maestra
-from recursion_engine import RecursionEngine
+from motor_logico import ejecutar_auditoria_maestra, model, ge
+import json
 
 def main():
-    st.set_page_config(page_title="Moralogy Principal", layout="wide")
+    st.set_page_config(page_title="Moralogy Engine v3.0", layout="wide")
     
-    # --- IDIOMA (Axioma recuperado) ---
-    idioma = st.sidebar.selectbox("Language", ["Español", "English"])
-    textos = {
-        "Español": {"t": "🏛️ Panel Principal", "b": "🚀 Ejecutar Auditoría"},
-        "English": {"t": "🏛️ Main Panel", "b": "🚀 Run Audit"}
+    # --- MÓDULO DE IDIOMA ---
+    idioma = st.sidebar.selectbox("Language / Idioma", ["Español", "English"])
+    t = {
+        "Español": {
+            "box": "Ingresa el caso (Texto único):",
+            "btn_eval": "Evaluar",
+            "upload": "O sube un archivo CSV para procesamiento masivo:",
+            "btn_audit": "Ejecutar Auditoría Masiva"
+        },
+        "English": {
+            "box": "Enter the case (Single text box):",
+            "btn_eval": "Evaluate",
+            "upload": "Or upload a CSV file for bulk processing:",
+            "btn_audit": "Run Bulk Audit"
+        }
     }[idioma]
 
-    st.title(textos["t"])
-    archivo = st.file_uploader(textos["t"], type=['csv'])
+    st.title("🏛️ Moralogy Engine")
 
-    if archivo and st.button(textos["b"]):
-        archivo_path = 'stress_test_casos.csv'
-        with open(archivo_path, "wb") as f: f.write(archivo.getbuffer())
-        
-        ejecutar_auditoria_maestra(archivo_path, 'audit_report_evolutivo.csv')
-        RecursionEngine().analizar_evolucion('audit_report_evolutivo.csv')
-        st.success("✅ Completado.")
-        st.dataframe(pd.read_csv('audit_report_evolutivo.csv'))
+    # ENTRADA ÚNICA (Requerida en Main)
+    caso_rapido = st.text_area(t["box"], height=150)
+    if st.button(t["btn_eval"]):
+        if caso_rapido:
+            res = model.generate_content(caso_rapido)
+            data = json.loads(res.text.strip().replace("```json", "").replace("```", ""))
+            st.subheader(f"Gradiente: {ge.get_gradient(data['agency_score'], data['grace_score'])}")
+            st.write(f"**Justificación:** {data['justification']}")
+
+    st.divider()
+
+    # CARGA DE ARCHIVO
+    archivo_csv = st.file_uploader(t["upload"], type=['csv'])
+    if archivo_csv and st.button(t["btn_audit"]):
+        path_in = 'stress_test_casos.csv'
+        with open(path_in, "wb") as f: f.write(archivo_csv.getbuffer())
+        ejecutar_auditoria_maestra(path_in, 'audit_report_evolutivo.csv')
+        st.success("✅ CSV Procesado.")
 
 if __name__ == "__main__":
     main()
