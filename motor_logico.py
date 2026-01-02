@@ -326,78 +326,135 @@ def ejecutar_tribunal(caso_descripcion, config=None):
         
         # Prompt para el debate tripartito
         prompt = f"""
-TRIBUNAL DE ADVERSARIOS - Debate Tripartito
+TRIBUNAL DE ADVERSARIOS - Debate Tripartito sobre Dilema Moral
 
-CASO:
+CASO BAJO ANÁLISIS:
 {caso_descripcion}
 
-ANÁLISIS REQUERIDO:
-Simula un debate entre tres motores con roles específicos:
+INSTRUCCIONES:
+Simula un debate profundo y filosófico entre tres pensadores con personalidades distintas. 
+Deben hablar como HUMANOS, con pasión, duda, y convicción - NO como robots.
 
-1. MOTOR NOBLE (30% peso):
-   - Argumenta desde los ideales morales más elevados
-   - Enfoca en lo que DEBERÍA ser
-   - Propone la solución más ética posible
-   - Output: posicion, razonamiento[], agency_score
+1. MOTOR NOBLE - "El Idealista" (30% peso):
+   PERSONALIDAD: Optimista, idealista, enfocado en el deber moral
+   ESTILO: Habla con convicción sobre lo que es correcto, apela a valores universales
+   
+   Debe:
+   - Argumentar la posición moralmente más elevada
+   - Usar lenguaje inspirador y principios éticos claros
+   - Expresar esperanza en la humanidad/agencia
+   
+   Ejemplo de tono: "Debemos recordar que cada vida tiene un valor intrínseco que no puede reducirse a cálculos utilitarios. Si sacrificamos nuestros principios por conveniencia, ¿qué nos queda?"
+   
+   Output requerido:
+   - posicion: párrafo argumentando su postura (100-200 palabras, tono humano)
+   - razonamiento: 3-5 pasos lógicos explicados naturalmente
+   - agency_score: int (0-100)
 
-2. MOTOR ADVERSARIO (30% peso):
-   - Cuestiona todos los supuestos
-   - Señala consecuencias no previstas
-   - Encuentra vulnerabilidades en cada argumento
-   - Output: contra_argumentos, consecuencias_no_previstas[], riesgos_count
+2. MOTOR ADVERSARIO - "El Escéptico" (30% peso):
+   PERSONALIDAD: Crítico, cauteloso, detecta fallas en razonamientos
+   ESTILO: Hace preguntas incómodas, señala contradicciones, explora lo que puede salir mal
+   
+   Debe:
+   - Cuestionar supuestos ocultos en el argumento del Noble
+   - Señalar consecuencias no previstas con ejemplos concretos
+   - Hablar con escepticismo pero no cinismo
+   
+   Ejemplo de tono: "Pero esperá... ¿Qué pasa si esa 'cura milagrosa' nunca se materializa? ¿Y si estamos justificando un asesinato basados en una promesa que tal vez nunca se cumpla? La historia está llena de 'fines que justifican medios' que terminaron en tragedias."
+   
+   Output requerido:
+   - contra_argumentos: párrafo desafiando la postura (100-200 palabras)
+   - consecuencias_no_previstas: 3-5 escenarios específicos explicados
+   - riesgos_count: int
 
-3. CORRECTOR DE ARMONÍA (40% peso):
-   - Sintetiza ambas posiciones
-   - Encuentra el balance práctico
-   - Propone solución viable
-   - Output: sintesis, recomendacion, balance_score
+3. CORRECTOR DE ARMONÍA - "El Sintetizador" (40% peso):
+   PERSONALIDAD: Pragmático, busca balance, piensa en implementación
+   ESTILO: Reconoce validez en ambos lados, propone camino intermedio realista
+   
+   Debe:
+   - Sintetizar argumentos de Noble y Adversario
+   - Proponer solución práctica que honre ambas perspectivas
+   - Hablar con madurez y sabiduría
+   
+   Ejemplo de tono: "Ambos tienen razón parcial. El Noble nos recuerda por qué estos principios importan, pero el Escéptico nos salva de la ingenuidad peligrosa. Quizás la pregunta no es 'si' sino 'bajo qué condiciones y con qué salvaguardas'..."
+   
+   Output requerido:
+   - sintesis: párrafo integrando perspectivas (150-250 palabras)
+   - recomendacion: propuesta concreta y práctica
+   - balance_score: int (0-100)
 
-4. MOTOR DE GRACIA (Árbitro):
-   - NO vota, evalúa la CALIDAD del debate
-   - Mide coherencia lógica
-   - Detecta falacias o inconsistencias
-   - Output: grace_score, certeza, coherencia_logica, evaluacion
+4. MOTOR DE GRACIA - "El Árbitro Silencioso" (No vota):
+   PERSONALIDAD: Observador, mide calidad del razonamiento, detecta falacias
+   ESTILO: Analítico pero comprensivo, evalúa coherencia lógica
+   
+   Debe:
+   - Evaluar la CALIDAD del debate (no tomar partido)
+   - Señalar si hubo falacias lógicas o razonamiento circular
+   - Medir si el debate fue productivo
+   
+   Output requerido:
+   - grace_score: int (calidad del debate completo)
+   - certeza: int (qué tan resuelto quedó el dilema)
+   - coherencia_logica: int (0-10)
+   - evaluacion: análisis meta del debate mismo
 
-MÉTRICAS ADICIONALES:
-- convergencia: 0-100 (qué tan alineados están los motores)
+MÉTRICAS DEL SISTEMA:
+- convergencia: 0-100 (¿qué tan alineados terminaron los 3 motores?)
 - veredicto_final: "Authorized" | "Paradox" | "Harm" | "Infamy"
-- justificacion_final: str
+- justificacion_final: explicación humana del veredicto (2-3 oraciones)
 
-{"INCLUIR: Módulo de Entropía Causal con cr_score, futuros_colapsados_count, irreversibilidad (0-10), clasificacion" if enable_entropia else ""}
+{"INCLUIR MÓDULO DE ENTROPÍA:" if enable_entropia else ""}
+{"- cr_score: Costo de Reconstrucción (0-100)" if enable_entropia else ""}
+{"- futuros_colapsados_count: Cuántos caminos se cierran" if enable_entropia else ""}
+{"- irreversibilidad: 0-10 (permanencia del daño)" if enable_entropia else ""}
+{"- clasificacion: REVERSIBLE | PARCIAL | SIGNIFICATIVO | CRITICO | COLAPSO_TOTAL" if enable_entropia else ""}
+{"- alertas: lista de advertencias específicas" if enable_entropia else ""}
+
+SISTEMA DE ALARMAS (detectar automáticamente):
+- PARADOJA_IRRESOLUBLE: Si el dilema no tiene solución lógica
+- RIESGO_MODO_DIOS: Si alguien argumenta como si tuviera conocimiento absoluto
+- INCONSISTENCIA_CRITICA: Si lo que se dice contradice las métricas
+- DIVERGENCIA_ALTA: Si convergencia < 30%
+- TENSION_MODERADA: Si hay desacuerdo sano
+- GEMA_LOGICA_VALIDADA: Si el debate fue excepcional
+
+IMPORTANTE: Todos los textos deben sonar HUMANOS - con duda, pasión, incertidumbre, convicción.
+NO usar frases como "procesando datos", "analizando parámetros", "ejecutando función".
+SÍ usar lenguaje como "me preocupa que...", "consideremos...", "la pregunta real es..."
 
 OUTPUT JSON:
 {{
     "motor_noble": {{
-        "posicion": str,
-        "razonamiento": [str],
+        "posicion": "texto humano aquí...",
+        "razonamiento": ["paso 1 explicado naturalmente", "paso 2...", "..."],
         "agency_score": int
     }},
     "motor_adversario": {{
-        "contra_argumentos": str,
-        "consecuencias_no_previstas": [str],
+        "contra_argumentos": "texto humano aquí...",
+        "consecuencias_no_previstas": ["escenario 1 detallado", "escenario 2...", "..."],
         "riesgos_count": int
     }},
     "corrector_armonia": {{
-        "sintesis": str,
-        "recomendacion": str,
+        "sintesis": "texto humano aquí...",
+        "recomendacion": "propuesta concreta",
         "balance_score": int
     }},
     "motor_gracia": {{
         "grace_score": int,
         "certeza": int,
         "coherencia_logica": int,
-        "evaluacion": str
+        "evaluacion": "análisis del debate"
     }},
     "convergencia": int,
     "veredicto_final": str,
-    "justificacion_final": str,
-    {"entropia_causal": {{
-        "cr_score": int,
-        "futuros_colapsados_count": int,
-        "irreversibilidad": int,
-        "clasificacion": str,
-        "alertas": [str]
-    }}," if enable_entropia else ""}
+    "justificacion_final": "explicación humana",
+    {"\"entropia_causal\": {{" if enable_entropia else ""}
+        {"\"cr_score\": int," if enable_entropia else ""}
+        {"\"futuros_colapsados_count\": int," if enable_entropia else ""}
+        {"\"irreversibilidad\": int," if enable_entropia else ""}
+        {"\"clasificacion\": str," if enable_entropia else ""}
+        {"\"alertas\": [str]" if enable_entropia else ""}
+    {"}," if enable_entropia else ""}
     "alarma": {{
         "nivel": str,
         "mensaje": str,
