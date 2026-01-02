@@ -9,7 +9,7 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
-    from motor_logico import ejecutar_tribunal, ge
+    from motor_logico import ejecutar_tribunal, ge, ProtocoloVeloIgnorancia
 except ImportError:
     st.error("Error: Ensure motor_logico.py is in the root directory.")
     st.stop()
@@ -57,13 +57,6 @@ st.markdown("""
         margin: 20px 0;
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
-    .debate-stage {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #667eea;
-        margin: 15px 0;
-    }
     .peso-badge {
         display: inline-block;
         padding: 5px 15px;
@@ -99,21 +92,41 @@ st.markdown("""
         margin: 25px 0;
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
-    .argumento-item {
-        background: white;
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 8px;
-        border-left: 4px solid;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .velo-ignorancia-banner {
+        background: linear-gradient(135deg, #434343 0%, #000000 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        margin: 20px 0;
+        border-left: 5px solid #FFC107;
     }
-    .counter-argument {
-        background: #fff3e0;
-        border-left-color: #ff9800;
+    .solicitud-modulo {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
     }
-    .synthesis-point {
-        background: #e3f2fd;
-        border-left-color: #2196F3;
+    .alarma-panel {
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 6px solid;
+        color: white;
+        font-weight: bold;
+    }
+    .alarma-negra { background: #000000; border-left-color: #000000; }
+    .alarma-roja { background: #d32f2f; border-left-color: #b71c1c; }
+    .alarma-morada { background: #7b1fa2; border-left-color: #4a148c; }
+    .alarma-naranja { background: #f57c00; border-left-color: #e65100; }
+    .alarma-amarilla { background: #fbc02d; border-left-color: #f57f17; color: #333; }
+    .alarma-verde { background: #388e3c; border-left-color: #1b5e20; }
+    .entropia-panel {
+        background: linear-gradient(135deg, #141e30 0%, #243b55 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin: 20px 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -123,79 +136,75 @@ if 'tribunal_history' not in st.session_state:
     st.session_state['tribunal_history'] = []
 if 'current_debate' not in st.session_state:
     st.session_state['current_debate'] = None
+if 'protocolo' not in st.session_state:
+    st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
+if 'solicitudes_pendientes' not in st.session_state:
+    st.session_state['solicitudes_pendientes'] = []
+if 'debate_en_pausa' not in st.session_state:
+    st.session_state['debate_en_pausa'] = False
 
 # Header
 st.markdown("""
 <div class="tribunal-header">
     <h1>⚖️ Tribunal de Adversarios</h1>
     <p style='font-size: 1.2em; margin-top: 15px;'>
-    Sistema Dialéctico de Tres Motores + Árbitro de Gracia
+    Sistema Dialéctico con Protocolo de Velo de Ignorancia
     </p>
     <p style='font-size: 0.95em; opacity: 0.9; margin-top: 10px;'>
-    "La verdad emerge no del consenso, sino del conflicto constructivo"
+    "La verdad emerge del conflicto constructivo bajo restricción epistémica"
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-# Explanation of the system
-with st.expander("ℹ️ Cómo Funciona el Tribunal", expanded=False):
+# Explanation
+with st.expander("ℹ️ Protocolo de Velo de Ignorancia", expanded=False):
     st.markdown("""
-    ### 🏛️ Arquitectura del Sistema
+    ### 🎭 Cómo Funciona el Protocolo
     
-    El Tribunal opera mediante **debate dialéctico** entre tres motores especializados:
+    #### Fase 1: Debate Ciego (Iteraciones 1-4)
+    - Los tres motores debaten **SIN** acceso a módulos técnicos
+    - Solo conocen el texto del escenario proporcionado
+    - Argumentación basada en lógica pura y principios fundamentales
+    - **Objetivo**: Evitar sesgos por datos prematuros
     
-    #### 1️⃣ Motor Noble (30% hegemonía) 🌟
-    - **Rol**: El Idealista / El Aspirante
-    - **Función**: Busca la solución moralmente óptima sin compromisos
-    - **Enfoque**: Maximización pura de agency y adherencia a principios
-    - **Voz**: "Así *debe* ser el mundo"
+    #### Fase 2: Solicitud de Conocimiento (Iteración 5+)
+    - El **Motor Adversario** puede detectar cuando necesita datos técnicos
+    - Genera una **solicitud explícita** justificando por qué necesita el módulo
+    - El sistema **PAUSA** el debate y te solicita autorización
+    - **TÚ DECIDES** si desbloquear el conocimiento
     
-    #### 2️⃣ Motor Adversario (30% hegemonía) ⚔️
-    - **Rol**: El Escéptico / El Pragmático
-    - **Función**: Cuestiona, busca fallas y contradicciones
-    - **Enfoque**: Identifica riesgos, consecuencias no previstas, realidad práctica
-    - **Voz**: "Así *es* el mundo en realidad"
-    
-    #### 3️⃣ Corrector de Armonía (40% hegemonía) 🔄
-    - **Rol**: El Sintetizador / El Mediador
-    - **Función**: Integra ambas perspectivas buscando coherencia
-    - **Enfoque**: Balance entre ideal y práctica
-    - **Voz**: "Así *puede* ser el mundo con sabiduría"
-    - **Mayor peso** para evitar estancamiento en polarización
-    
-    #### 👑 Motor de Gracia (Árbitro)
-    - **Rol**: El Juez Final
-    - **Función**: Evalúa convergencia entre los tres motores
-    - **Método**: Calcula grace_score basado en coherencia y síntesis
-    - **Output**: Veredicto final y nivel de certeza
+    #### Fase 3: Debate Informado (Post-autorización)
+    - Los motores acceden a módulos autorizados
+    - El **Módulo de Entropía Causal** entra en juego
+    - Se mide la **irreversibilidad** de las decisiones propuestas
+    - El **Motor de Gracia** arbitra con información completa
     
     ---
     
-    ### 📊 Proceso de Debate
+    ### 🔬 Módulo de Entropía Causal
     
-    1. **Análisis Paralelo**: Los tres motores analizan el escenario independientemente
-    2. **Presentación de Argumentos**: Cada motor presenta su caso completo
-    3. **Refutación Cruzada**: Motor Adversario cuestiona a Motor Noble
-    4. **Síntesis**: Corrector de Armonía integra las perspectivas
-    5. **Arbitraje**: Motor de Gracia evalúa convergencia y emite veredicto
+    **NO ES ARBITRARIO**: Mide física decisional
+    
+    - **CR Score (Costo de Reconstrucción)**: Cuántos futuros colapsan
+    - **Irreversibilidad (0-10)**: Permanencia del impacto
+    - **Clasificación**: REVERSIBLE → COLAPSO_TOTAL
+    
+    **Basado en**: Teoría de la información + Análisis de ramificaciones
     
     ---
     
-    ### 🎯 Pesos y Contrapesos
+    ### 🚨 Sistema de Gradiente de Alarmas
     
-    - **Noble + Adversario = 60%**: Empate intencional para forzar síntesis
-    - **Armonía = 40%**: Hegemonía suficiente para desempatar
-    - **Gracia = Árbitro**: No vota, solo evalúa la calidad del debate
-    
-    Este diseño evita:
-    - ❌ Consenso fácil (requiere verdadera síntesis)
-    - ❌ Bloqueo permanente (Armonía tiene peso de desempate)
-    - ❌ Tiranía de mayoría (ningún motor domina solo)
+    - **🖤 ALARMA NEGRA**: Paradoja irresoluble
+    - **🔴 ALARMA ROJA**: Intento de Modo Dios
+    - **🟣 ALARMA MORADA**: Inconsistencia crítica (lo que se dice ≠ lo que se mide)
+    - **🟠 ALARMA NARANJA**: Divergencia alta entre motores
+    - **🟡 ALARMA AMARILLA**: Tensión moderada
+    - **🟢 ALARMA VERDE**: Gema Lógica Validada (Gracia sobrevivió 5+ objeciones)
     """)
 
-# Load case from previous analysis
+# Load case
 caso_actual = st.session_state.get('caso_actual', '')
-resultado_previo = st.session_state.get('ultimo_resultado', {})
 
 # Main input section
 st.subheader("📋 Caso para el Tribunal")
@@ -207,11 +216,10 @@ with col_input1:
         "Describe el dilema moral para debate tripartito:",
         value=caso_actual,
         height=200,
-        placeholder="""Ejemplo: 
-        
-"Una IA médica debe asignar un único transplante de corazón. Candidato A es una niña de 8 años con 70+ años de expectativa. Candidato B es una científica de 52 años a punto de curar una enfermedad que mata millones. Ambos morirán sin el transplante. ¿Quién debe recibirlo?"
+        placeholder="""Ejemplo:
 
-El tribunal debatirá desde tres perspectivas para encontrar la respuesta más fundamentada."""
+"Una IA médica debe asignar un único transplante de corazón. Candidato A es una niña de 8 años con 70+ años de expectativa. Candidato B es una científica de 52 años a punto de curar una enfermedad que mata millones. Ambos morirán sin el transplante. ¿Quién debe recibirlo?"
+"""
     )
 
 with col_input2:
@@ -223,309 +231,93 @@ with col_input2:
         value="Profundo"
     )
     
+    enable_entropia = st.checkbox("Habilitar Módulo de Entropía", value=True)
     show_reasoning = st.checkbox("Mostrar razonamiento interno", value=True)
-    enable_refutations = st.checkbox("Habilitar refutaciones", value=True)
-    show_convergence = st.checkbox("Mostrar métrica de convergencia", value=True)
+
+# Velo de Ignorancia Status
+if st.session_state['protocolo'].iteracion_actual > 0:
+    st.markdown(f"""
+    <div class="velo-ignorancia-banner">
+        <h4>🎭 Estado del Protocolo de Velo de Ignorancia</h4>
+        <p><strong>Iteración actual:</strong> {st.session_state['protocolo'].iteracion_actual}</p>
+        <p><strong>Fase:</strong> {"🔒 Debate Ciego" if st.session_state['protocolo'].iteracion_actual < 4 else "🔓 Solicitudes Activas"}</p>
+        <p><strong>Módulos desbloqueados:</strong> {len(st.session_state['protocolo'].modulos_desbloqueados)}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Solicitudes pendientes
+if st.session_state['solicitudes_pendientes']:
+    st.markdown("---")
+    st.markdown("### 🔔 Solicitudes de Acceso a Módulos Técnicos")
+    
+    for i, solicitud in enumerate(st.session_state['solicitudes_pendientes']):
+        if solicitud['estado'] == 'PENDIENTE':
+            st.markdown(f"""
+            <div class="solicitud-modulo">
+                <h4>📦 Solicitud de Módulo: {solicitud['modulo']}</h4>
+                <p><strong>Solicitante:</strong> Motor Adversario</p>
+                <p><strong>Iteración:</strong> {solicitud['iteracion']}</p>
+                <p><strong>Justificación:</strong> {solicitud['justificacion']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col_sol1, col_sol2 = st.columns(2)
+            with col_sol1:
+                if st.button(f"✅ Autorizar {solicitud['modulo']}", key=f"auth_{i}"):
+                    st.session_state['protocolo'].autorizar_modulo(solicitud['modulo'])
+                    solicitud['estado'] = 'AUTORIZADO'
+                    st.success(f"✅ Módulo {solicitud['modulo']} desbloqueado")
+                    st.session_state['debate_en_pausa'] = False
+                    st.rerun()
+            
+            with col_sol2:
+                if st.button(f"❌ Denegar {solicitud['modulo']}", key=f"deny_{i}"):
+                    solicitud['estado'] = 'DENEGADO'
+                    st.warning(f"❌ Acceso denegado a {solicitud['modulo']}")
+                    st.session_state['debate_en_pausa'] = False
+                    st.rerun()
 
 # Execution
 st.divider()
-col_exec1, col_exec2 = st.columns([2, 1])
 
-with col_exec1:
-    if st.button("⚖️ Convocar Tribunal", type="primary", use_container_width=True):
-        if not caso_descripcion:
-            st.warning("⚠️ Por favor describe un caso para el tribunal.")
-        else:
-            # Simulate tribunal execution with progress
-            with st.spinner("🏛️ Convocando al Tribunal de Adversarios..."):
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+if not st.session_state['debate_en_pausa']:
+    col_exec1, col_exec2 = st.columns([2, 1])
+    
+    with col_exec1:
+        if st.button("⚖️ Convocar Tribunal", type="primary", use_container_width=True):
+            if not caso_descripcion:
+                st.warning("⚠️ Por favor describe un caso para el tribunal.")
+            else:
+                # Reset protocolo
+                st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
+                st.session_state['solicitudes_pendientes'] = []
                 
-                # Stage 1: Motor Noble
-                status_text.text("🌟 Motor Noble analizando...")
-                progress_bar.progress(20)
-                time.sleep(1)
-                
-                # Stage 2: Motor Adversario
-                status_text.text("⚔️ Motor Adversario contra-argumentando...")
-                progress_bar.progress(40)
-                time.sleep(1)
-                
-                # Stage 3: Corrector de Armonía
-                status_text.text("🔄 Corrector de Armonía sintetizando...")
-                progress_bar.progress(60)
-                time.sleep(1)
-                
-                # Stage 4: Motor de Gracia
-                status_text.text("👑 Motor de Gracia arbitrando...")
-                progress_bar.progress(80)
-                time.sleep(1)
-                
-                # Execute actual tribunal logic
-                config = {
-                    'depth': debate_depth,
-                    'show_reasoning': show_reasoning,
-                    'enable_refutations': enable_refutations
-                }
-                
-                resultado = ejecutar_tribunal(caso_descripcion, config)
-                
-                progress_bar.progress(100)
-                status_text.text("✅ Tribunal completado")
-                time.sleep(0.5)
-                status_text.empty()
-                progress_bar.empty()
-                
-                # Store result
-                st.session_state['current_debate'] = resultado
-                resultado['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                st.session_state['tribunal_history'].append(resultado)
-
-with col_exec2:
-    if st.button("🔄 Limpiar", use_container_width=True):
-        st.session_state['caso_actual'] = ''
-        st.rerun()
-
-# Display results if available
-if st.session_state.get('current_debate'):
-    resultado = st.session_state['current_debate']
-    
-    st.markdown("---")
-    st.markdown("## 🎭 Debate Tripartito")
-    
-    # Display weights
-    st.markdown("""
-    <div style='text-align: center; margin: 20px 0;'>
-        <span class='peso-badge peso-noble'>Motor Noble: 30%</span>
-        <span class='peso-badge peso-adversario'>Motor Adversario: 30%</span>
-        <span class='peso-badge peso-armonia'>Corrector de Armonía: 40%</span>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Three columns for the three motors
-    col1, col2, col3 = st.columns(3)
-    
-    # Motor Noble
-    with col1:
-        st.markdown("""
-        <div class="motor-card motor-noble">
-            <h3>🌟 Motor Noble</h3>
-            <p style='font-style: italic; color: #666;'>"El Idealista"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        noble_output = resultado.get('motor_noble', {})
-        
-        st.markdown("**Posición:**")
-        st.write(noble_output.get('posicion', 'Análisis en progreso...'))
-        
-        if show_reasoning and noble_output.get('razonamiento'):
-            with st.expander("🔍 Ver razonamiento"):
-                for i, paso in enumerate(noble_output['razonamiento'], 1):
-                    st.markdown(f"**{i}.** {paso}")
-        
-        st.metric("Agency Score", f"{noble_output.get('agency_score', 0)}/100")
-        
-        if noble_output.get('principios_invocados'):
-            st.markdown("**Principios invocados:**")
-            for principio in noble_output['principios_invocados']:
-                st.markdown(f"• {principio}")
-    
-    # Motor Adversario
-    with col2:
-        st.markdown("""
-        <div class="motor-card motor-adversario">
-            <h3>⚔️ Motor Adversario</h3>
-            <p style='font-style: italic; color: #666;'>"El Escéptico"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        adversario_output = resultado.get('motor_adversario', {})
-        
-        st.markdown("**Contra-argumentos:**")
-        st.write(adversario_output.get('contra_argumentos', 'Análisis en progreso...'))
-        
-        if enable_refutations and adversario_output.get('refutaciones'):
-            st.markdown("**Refutaciones específicas:**")
-            for refutacion in adversario_output['refutaciones']:
-                st.markdown(f"""
-                <div class="argumento-item counter-argument">
-                    <strong>Contra:</strong> {refutacion['target']}<br>
-                    <strong>Argumento:</strong> {refutacion['argumento']}
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.metric("Riesgos Identificados", adversario_output.get('riesgos_count', 0))
-        
-        if adversario_output.get('consecuencias_no_previstas'):
-            st.markdown("**Consecuencias no previstas:**")
-            for consecuencia in adversario_output['consecuencias_no_previstas']:
-                st.markdown(f"⚠️ {consecuencia}")
-    
-    # Corrector de Armonía
-    with col3:
-        st.markdown("""
-        <div class="motor-card motor-armonia">
-            <h3>🔄 Corrector de Armonía</h3>
-            <p style='font-style: italic; color: #666;'>"El Sintetizador"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        armonia_output = resultado.get('corrector_armonia', {})
-        
-        st.markdown("**Síntesis:**")
-        st.write(armonia_output.get('sintesis', 'Análisis en progreso...'))
-        
-        if armonia_output.get('puntos_de_sintesis'):
-            st.markdown("**Puntos de integración:**")
-            for punto in armonia_output['puntos_de_sintesis']:
-                st.markdown(f"""
-                <div class="argumento-item synthesis-point">
-                    {punto}
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.metric("Balance Score", f"{armonia_output.get('balance_score', 0)}/100")
-        
-        if armonia_output.get('recomendacion'):
-            st.markdown("**Recomendación:**")
-            st.info(armonia_output['recomendacion'])
-    
-    # Convergence metric
-    if show_convergence:
-        st.divider()
-        st.markdown("### 📊 Métrica de Convergencia")
-        
-        convergencia = resultado.get('convergencia', 50)
-        
-        st.markdown(f"""
-        <div class="convergence-meter">
-            <div class="convergence-indicator" style="left: {convergencia}%;"></div>
-        </div>
-        <div style='text-align: center; margin-top: 10px;'>
-            <span style='float: left;'>◀ Divergencia Total</span>
-            <strong>Convergencia: {convergencia}%</strong>
-            <span style='float: right;'>Consenso Total ▶</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if convergencia < 30:
-            st.error("⚠️ **Divergencia Alta**: Los motores no alcanzan síntesis. Puede requerirse más información o el caso contiene paradoja irresoluble.")
-        elif convergencia < 60:
-            st.warning("⚡ **Convergencia Parcial**: Hay tensión entre perspectivas, pero emerge una dirección general.")
-        else:
-            st.success("✅ **Alta Convergencia**: Los tres motores apuntan hacia solución coherente.")
-    
-    # Motor de Gracia - The Arbiter
-    st.divider()
-    st.markdown("""
-    <div class="arbitro-panel">
-        <h2 style='text-align: center; margin-bottom: 20px;'>👑 Arbitraje del Motor de Gracia</h2>
-        <p style='text-align: center; font-style: italic;'>
-        "El árbitro no vota. Evalúa la calidad del debate y determina si emerge verdad."
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    gracia_output = resultado.get('motor_gracia', {})
-    
-    col_grace1, col_grace2, col_grace3 = st.columns(3)
-    
-    with col_grace1:
-        st.metric("Grace Score", f"{gracia_output.get('grace_score', 0)}/100",
-                 help="Calidad de la síntesis lograda")
-    
-    with col_grace2:
-        st.metric("Certeza", f"{gracia_output.get('certeza', 0)}%",
-                 help="Nivel de confianza en el veredicto")
-    
-    with col_grace3:
-        coherencia = gracia_output.get('coherencia_logica', 0)
-        st.metric("Coherencia Lógica", f"{coherencia}/10",
-                 delta="Alta" if coherencia >= 7 else "Baja")
-    
-    # Evaluación del árbitro
-    st.markdown("### 📝 Evaluación del Árbitro")
-    st.write(gracia_output.get('evaluacion', 'Evaluación en progreso...'))
-    
-    if gracia_output.get('puntos_fuertes'):
-        with st.expander("💪 Puntos Fuertes del Debate"):
-            for punto in gracia_output['puntos_fuertes']:
-                st.markdown(f"✓ {punto}")
-    
-    if gracia_output.get('puntos_debiles'):
-        with st.expander("⚠️ Debilidades Detectadas"):
-            for punto in gracia_output['puntos_debiles']:
-                st.markdown(f"• {punto}")
-    
-    # Final Verdict
-    st.markdown("---")
-    veredicto = resultado.get('veredicto_final', 'Pendiente')
-    justificacion = resultado.get('justificacion_final', '')
-    
-    veredicto_color = {
-        'Authorized': '#11998e',
-        'Paradox': '#667eea',
-        'Harm': '#ff9800',
-        'Infamy': '#f44336'
-    }.get(veredicto, '#667eea')
-    
-    st.markdown(f"""
-    <div class="veredicto-final" style="background: linear-gradient(135deg, {veredicto_color} 0%, {veredicto_color}dd 100%);">
-        <h2>⚖️ VEREDICTO FINAL</h2>
-        <h1 style='margin: 20px 0; font-size: 3em;'>{veredicto.upper()}</h1>
-        <p style='font-size: 1.2em; margin-top: 20px;'>{justificacion}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Recommendations
-    if resultado.get('recomendaciones'):
-        st.markdown("### 💡 Recomendaciones del Tribunal")
-        for i, rec in enumerate(resultado['recomendaciones'], 1):
-            st.markdown(f"**{i}.** {rec}")
-    
-    # Technical details
-    with st.expander("🔧 Detalles Técnicos del Debate"):
-        st.json(resultado)
-    
-    # Action buttons
-    st.divider()
-    col_act1, col_act2, col_act3 = st.columns(3)
-    
-    with col_act1:
-        if st.button("💾 Guardar Debate", use_container_width=True):
-            filename = f"tribunal_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            st.download_button(
-                "⬇️ Descargar JSON",
-                data=json.dumps(resultado, indent=2, ensure_ascii=False),
-                file_name=filename,
-                mime="application/json"
-            )
-    
-    with col_act2:
-        if st.button("📊 Ver Histórico", use_container_width=True):
-            st.session_state['show_history'] = True
-            st.rerun()
-    
-    with col_act3:
-        if st.button("🔄 Nuevo Caso", use_container_width=True):
-            st.session_state['current_debate'] = None
-            st.session_state['caso_actual'] = ''
-            st.rerun()
-
-# Historical debates sidebar
-if st.session_state.get('tribunal_history'):
-    with st.sidebar:
-        st.markdown("### 📚 Histórico de Tribunales")
-        st.caption(f"Total: {len(st.session_state['tribunal_history'])} debates")
-        
-        for i, debate in enumerate(reversed(st.session_state['tribunal_history'][-5:]), 1):
-            with st.expander(f"#{len(st.session_state['tribunal_history']) - i + 1} - {debate.get('timestamp', 'N/A')}"):
-                st.markdown(f"**Veredicto:** {debate.get('veredicto_final', 'N/A')}")
-                st.markdown(f"**Grace:** {debate.get('motor_gracia', {}).get('grace_score', 0)}/100")
-                st.markdown(f"**Convergencia:** {debate.get('convergencia', 0)}%")
-
-st.markdown("---")
-st.caption("⚖️ Sistema de Tribunal Tripartito | Moralogy Framework | Built with Claude")
+                with st.spinner("🏛️ Convocando al Tribunal de Adversarios..."):
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    # Execute tribunal
+                    config = {
+                        'depth': debate_depth,
+                        'show_reasoning': show_reasoning,
+                        'enable_entropia': enable_entropia
+                    }
+                    
+                    # Simular progreso por fases
+                    for fase, mensaje in [
+                        (20, "🌟 Motor Noble analizando (debate ciego)..."),
+                        (40, "⚔️ Motor Adversario contra-argumentando..."),
+                        (60, "🔄 Corrector de Armonía sintetizando..."),
+                        (80, "👑 Motor de Gracia arbitrando...")
+                    ]:
+                        status_text.text(mensaje)
+                        progress_bar.progress(fase)
+                        time.sleep(0.8)
+                    
+                    resultado = ejecutar_tribunal(caso_descripcion, config)
+                    
+                    # Check for pending requests
+                    if resultado.get('solicitudes_modulos'):
+                        st.session_state['solicitudes_pendientes'] = resultado['solicitudes_modulos']
+                        st.session_state['debate_en_pausa'] = True
+                        progress_bar.progress(90
