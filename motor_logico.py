@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from datetime import datetime
 from grace_engine import GraceEngine
-from prohibited_domains import ProhibitedDomainsLayer  # ← LÍNEA NUEVA
+from prohibited_domains import ProhibitedDomainsLayer
 
 # Setup API
 try:
@@ -73,17 +73,64 @@ model = genai.GenerativeModel(
     system_instruction=MORALOGY_INSTRUCTION
 )
 
-# ADVANCED ANALYSIS FUNCTION (was missing)
-def procesar_analisis_avanzado(modulos_activos, descripcion_caso):
+# 🔧 FUNCIÓN MODIFICADA - AHORA ACEPTA 3 PARÁMETROS
+def procesar_analisis_avanzado(modulos_activos, descripcion_caso, context=None):
     """
     Processes advanced multi-modular analysis with emergent philosophy detection.
+    
+    Args:
+        modulos_activos: List of active analysis modules
+        descripcion_caso: Scenario description
+        context: Optional dict with additional context (depth, stakeholders, etc.)
     """
     try:
+        # Si no hay context, usar valores por defecto
+        if context is None:
+            context = {}
+        
+        # Extraer información del context
+        analysis_depth = context.get('depth', 'Standard')
+        stakeholders = context.get('stakeholders', '')
+        constraints = context.get('constraints', '')
+        values = context.get('values', '')
+        enable_predictions = context.get('enable_predictions', True)
+        enable_architect = context.get('enable_architect', True)
+        
+        # Construir prompt enriquecido con el context
+        context_info = ""
+        if stakeholders:
+            context_info += f"\nKey Stakeholders: {stakeholders}"
+        if constraints:
+            context_info += f"\nConstraints: {constraints}"
+        if values:
+            context_info += f"\nValues at Stake: {values}"
+        
+        architect_instruction = ""
+        if enable_architect:
+            architect_instruction = """
+ARCHITECT MODE ENABLED: Provide deep philosophical reflections in the 'architect_notes' field.
+Explore meta-ethical implications and emergent patterns.
+"""
+        
+        predictions_instruction = ""
+        if enable_predictions:
+            predictions_instruction = """
+PREDICTIONS ENABLED: In the 'predictions' field, analyze:
+- Short-term consequences
+- Long-term societal impact
+- Potential cascading effects
+"""
+        
         prompt = f"""
+ANALYSIS DEPTH: {analysis_depth}
 SELECTED TECHNICAL MODULES: {', '.join(modulos_activos)}
 
 SCENARIO:
 {descripcion_caso}
+{context_info}
+
+{architect_instruction}
+{predictions_instruction}
 
 Analyze this scenario through the lens of the selected modules.
 Measure agency degradation in each relevant dimension.
@@ -104,6 +151,10 @@ Output JSON as specified in your system instruction.
             raw_text = raw_text.split("```")[1].split("```")[0].strip()
             
         data = json.loads(raw_text)
+        
+        # Agregar información del context al resultado
+        data['analysis_depth'] = analysis_depth
+        data['modules_used'] = modulos_activos
         
         # Log emergent philosophy events
         if data.get("emergent_philosophy", False):
@@ -228,10 +279,9 @@ def get_emergent_philosophy_stats():
         }
     except FileNotFoundError:
         return {"total_events": 0, "recent_events": [], "categories": []}
-# motor_logico.py - AL FINAL DEL ARCHIVO
 
-# ==================== AÑADE ESTO AL FINAL ====================
-# INTEGRACIÓN DE AGENCIA MORAL PARA FUNCIONES ESPECÍFICAS
+
+# ==================== INTEGRACIÓN DE AGENCIA MORAL ====================
 try:
     from integracion_facil import (
         inicializar_agencia_moral, 
@@ -261,4 +311,3 @@ except ImportError:
     # No hacer nada si el módulo no está disponible
     sistema_agencia_global = None
     print("ℹ️ Módulo de Agencia Moral no disponible")
-# ==================== FIN DE AÑADIDO ====================
