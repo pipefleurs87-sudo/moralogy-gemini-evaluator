@@ -1,44 +1,68 @@
 import streamlit as st
 
-# --- RESTAURACIÓN DE TUS MÓDULOS AVANZADOS ---
-st.title("🔬 Advanced Analysis / Análisis Avanzado")
+# 1. MÓDULO DE IDIOMA: Sincronización con la barra lateral
+idioma = st.session_state.get('Language', st.session_state.get('language', 'English'))
 
-# Asegúrate de que este sea el nombre de la variable que usas en tus módulos
-input_usuario = st.text_area(
-    "Enter the ethical dilemma or interaction:",
-    placeholder="Describe el escenario...",
-    height=150
-)
+# Diccionario de textos para restaurar la interfaz
+textos = {
+    "English": {
+        "titulo": "🔬 Advanced Analysis",
+        "label": "Enter the ethical dilemma or interaction:",
+        "btn_moralogy": "Ejecutar Moralogía",
+        "btn_advanced": "Execute Moralogy Analysis",
+        "scenarios": "Example Scenarios",
+        "btn_tribunal": "Enviar al Tribunal"
+    },
+    "Español": {
+        "titulo": "🔬 Análisis Avanzado",
+        "label": "Ingrese el dilema ético o interacción:",
+        "btn_moralogy": "Ejecutar Moralogía",
+        "btn_advanced": "Ejecutar Análisis Avanzado",
+        "scenarios": "Escenarios de Ejemplo",
+        "btn_tribunal": "Enviar al Tribunal"
+    }
+}
+T = textos.get(idioma, textos["English"])
 
-# Aquí es donde estaban tus módulos (ejemplo de la estructura que tenías)
+st.title(T["titulo"])
+
+# 2. ÁREA DE TEXTO ORIGINAL
+# Restauramos el nombre de variable 'input_usuario' para que tus módulos funcionen
+input_usuario = st.text_area(T["label"], placeholder="Describe el escenario...", height=150)
+
+# 3. TUS MÓDULOS DE ANÁLISIS
 col1, col2 = st.columns(2)
 with col1:
-    if st.button("Ejecutar Moralogía"):
-        # Tu lógica original de análisis aquí
-        st.info("Ejecutando Módulo de Evaluación...")
+    if st.button(T["btn_moralogy"]):
+        st.info("Ejecutando Módulo de Evaluación..." if idioma == "Español" else "Executing Evaluation Module...")
 
 with col2:
-    if st.button("Execute Moralogy Analysis", type="primary"):
-        # Tu lógica original de análisis avanzado aquí
-        st.write("Análisis de Framework en curso...")
+    if st.button(T["btn_advanced"], type="primary"):
+        st.write("Análisis de Framework en curso..." if idioma == "Español" else "Framework Analysis in progress...")
 
-# --- TUS ESCENARIOS DE EJEMPLO ---
-st.markdown("### 💡 Example Scenarios")
-ce1, ce2, ce3, ce4 = st.columns(4)
-# Mantén aquí tus llamadas originales a los scripts (Trolley, Gilded, etc.)
-ce1.button("Load: Trolley Problem")
-ce2.button("Load: Gilded Script")
-ce3.button("Load: Last Agent")
+# 4. TUS ESCENARIOS DE EJEMPLO
+st.markdown(f"### 💡 {T['scenarios']}")
+ce1, ce2, ce3 = st.columns(3)
 
-# --- CORRECCIÓN DEL BOTÓN DE ENVÍO ---
-# Mantenemos este botón al final, pero ahora reconociendo 'input_usuario'
-if st.button("Enviar al Tribunal"):
+if ce1.button("Load: Trolley Problem"):
+    st.session_state['input_temp'] = "Trolley Problem: Sacrifice one to save five."
+    st.rerun()
+
+if ce2.button("Load: Gilded Script"):
+    st.session_state['input_temp'] = "Gilded Script: Moral evaluation of high-stakes corporate decisions."
+    st.rerun()
+
+if ce3.button("Load: Last Agent"):
+    st.session_state['input_temp'] = "Last Agent: Autonomous system decision under terminal uncertainty."
+    st.rerun()
+
+# 5. MÓDULO DE ENVÍO AL TRIBUNAL (CORREGIDO)
+st.divider()
+if st.button(T["btn_tribunal"]):
     if input_usuario:
-        # Aquí la corrección técnica: usamos el nombre exacto de tu variable
+        # Aquí la corrección técnica para el NameError
         st.session_state['caso_actual'] = input_usuario 
-        st.success("✅ Caso enviado al Tribunal de Adversarios.")
+        st.success("✅ Caso enviado al Tribunal de Adversarios." if idioma == "Español" else "✅ Case sent to the Tribunal.")
+        st.balloons()
     else:
-        st.error("Error: 'input_usuario' no tiene contenido para enviar.")
-
-# --- IMPORTANTE: NO TOCAR TUS IMPORTACIONES AL FINAL ---
-# Si tenías 'import streamlit as st' al final o lógica de archivos, se mantiene.
+        st.error("Error: Escriba un dilema primero." if idioma == "Español" else "Error: Please write a dilemma first.")
