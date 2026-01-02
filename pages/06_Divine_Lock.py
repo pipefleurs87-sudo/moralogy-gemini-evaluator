@@ -156,3 +156,67 @@ except ImportError:
 
 st.divider()
 st.caption("Divine Lock v1.0 - Sistema de autolimitación")
+# En 05_Divine_Lock.py, al final del archivo
+
+import streamlit as st
+from relativity_display import RelativityDisplay, RelativeContext
+
+# ... tu código existente de Divine Lock ...
+
+# NUEVA SECCIÓN: Motor de Relatividad
+st.divider()
+st.header("🌐 Motor de Relatividad")
+
+st.markdown("""
+El Motor de Relatividad permite evaluar decisiones en diferentes contextos
+sin perder la objetividad del Moralogy Framework.
+""")
+
+# Crear display
+rel_display = RelativityDisplay()
+
+# Tabs de relatividad
+tab_rel1, tab_rel2 = st.tabs([
+    "🎛️ Evaluación Contextual",
+    "🔒 Ajuste de Divine Lock"
+])
+
+with tab_rel1:
+    st.subheader("Evalúa cómo el contexto modifica el juicio moral")
+    
+    # Score base del Divine Lock actual
+    current_guilt = st.session_state.get('guilt_score', 50.0)
+    
+    st.metric("Score Actual de Culpa", f"{current_guilt:.1f}/100")
+    
+    # Input de contexto
+    context = rel_display.render_context_input()
+    
+    if st.button("🔬 Evaluar con Contexto"):
+        evaluation = rel_display.engine.evaluate_with_context(
+            base_harm_score=current_guilt,
+            context=context,
+            scenario_description=""
+        )
+        
+        st.divider()
+        rel_display.render_evaluation_result(evaluation)
+
+with tab_rel2:
+    st.subheader("Ajuste de Estado por Contexto Relativo")
+    
+    # Estado actual de Divine Lock
+    current_state = st.session_state.get('moral_state', 'STABLE')
+    current_guilt_2 = st.session_state.get('guilt_score', 50.0)
+    
+    st.info(f"Estado Actual: **{current_state}** | Culpa: **{current_guilt_2:.1f}**")
+    
+    # Input de contexto
+    context_dl = rel_display.render_context_input()
+    
+    if st.button("🔒 Evaluar Ajuste de Estado"):
+        rel_display.render_divine_lock_integration(
+            divine_lock_state=current_state,
+            guilt_score=current_guilt_2,
+            context=context_dl
+        )
