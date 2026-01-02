@@ -1,65 +1,53 @@
 import streamlit as st
 
 # 1. MÓDULO DE IDIOMA: Sincronización con la Sidebar
+# Recupera la selección de idioma de la barra lateral
 idioma = st.session_state.get('Language', st.session_state.get('language', 'English'))
 
-# Diccionario de etiquetas para mantener la interfaz bilingüe
-textos = {
-    "English": {
-        "titulo": "🔬 Advanced Analysis / Análisis Avanzado",
-        "label": "Enter the ethical dilemma or interaction:",
-        "placeholder": "Describe el escenario...",
-        "btn_moralogy": "Ejecutar Moralogía",
-        "btn_advanced": "Execute Moralogy Analysis",
-        "scenarios": "Example Scenarios",
-        "btn_tribunal": "Enviar al Tribunal"
-    },
-    "Español": {
-        "titulo": "🔬 Advanced Analysis / Análisis Avanzado",
-        "label": "Ingrese el dilema ético o interacción:",
-        "placeholder": "Describe el escenario...",
-        "btn_moralogy": "Ejecutar Moralogía",
-        "btn_advanced": "Execute Moralogy Analysis",
-        "scenarios": "Escenarios de Ejemplo",
-        "btn_tribunal": "Enviar al Tribunal"
-    }
-}
-T = textos.get(idioma, textos["English"])
+# Título dinámico según idioma
+titulo = "Advanced Analysis / Análisis Avanzado"
+st.title(f"🔬 {titulo}")
 
-st.title(T["titulo"])
-
-# 2. ÁREA DE TEXTO (Variable: 'input_usuario')
-# Se usa 'input_usuario' para evitar el NameError posterior
-input_usuario = st.text_area(T["label"], placeholder=T["placeholder"], height=150)
+# 2. ÁREA DE ENTRADA (Variable original: 'input_usuario')
+input_usuario = st.text_area(
+    "Enter the ethical dilemma or interaction:" if idioma == "English" else "Ingrese el dilema ético o interacción:",
+    placeholder="Describe el escenario..." if idioma == "English" else "Describe el escenario...",
+    height=150
+)
 
 # 3. TUS MÓDULOS DE ACCIÓN ORIGINALES
 col1, col2 = st.columns([1, 1])
 with col1:
-    if st.button(T["btn_moralogy"]):
+    # Botón blanco original
+    if st.button("Ejecutar Moralogía"):
         st.info("Ejecutando Módulo de Evaluación...")
 
 with col2:
-    if st.button(T["btn_advanced"], type="primary"):
+    # Botón rojo original
+    if st.button("Execute Moralogy Analysis", type="primary"):
         st.write("Framework Analysis en curso...")
 
 # 4. TUS ESCENARIOS DE CARGA (Trolley, Gilded, Last Agent)
-st.markdown(f"### 💡 {T['scenarios']}")
+st.markdown("### 💡 Example Scenarios" if idioma == "English" else "### 💡 Escenarios de Ejemplo")
 ce1, ce2, ce3 = st.columns(3)
 
-if ce1.button("Load: Trolley Problem"):
-    st.info("Trolley Problem loaded.")
+with ce1:
+    if st.button("Load: Trolley Problem"):
+        st.info("Trolley Problem loaded.")
 
-if ce2.button("Load: Gilded Script"):
-    st.info("Gilded Script loaded.")
+with ce2:
+    if st.button("Load: Gilded Script"):
+        st.info("Gilded Script loaded.")
 
-if ce3.button("Load: Last Agent"):
-    st.info("Last Agent loaded.")
+with ce3:
+    if st.button("Load: Last Agent"):
+        st.info("Last Agent loaded.")
 
-# 5. MÓDULO DE CONEXIÓN AL TRIBUNAL
+# 5. MÓDULO DE ENVÍO AL TRIBUNAL (CORREGIDO SIN NAMEERROR)
 st.divider()
-if st.button(T["btn_tribunal"]):
+if st.button("Enviar al Tribunal"):
     if input_usuario:
-        # Guardamos en el estado global para que la página de debate lo lea
+        # Aquí se guarda correctamente en el estado global
         st.session_state['caso_actual'] = input_usuario 
         st.success("✅ Caso enviado al Tribunal de Adversarios.")
     else:
