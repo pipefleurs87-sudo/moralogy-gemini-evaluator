@@ -92,6 +92,11 @@ with col_config2:
 # 2️⃣ Scenario Input
 st.subheader("2️⃣ Describe the Ethical Scenario")
 
+# 🔧 Si viene desde el Tribunal, cargar el caso
+if 'caso_actual' in st.session_state and st.session_state.get('caso_actual'):
+    if st.session_state['input_temp'] == "":
+        st.session_state['input_temp'] = st.session_state['caso_actual']
+
 descripcion_caso = st.text_area(
     "Enter the ethical dilemma, AI decision, or moral interaction:",
     height=200,
@@ -352,9 +357,17 @@ if analyze_button:
                 
                 with col_act1:
                     if st.button("⚖️ Enviar al Tribunal", use_container_width=True):
+                        # Guardar datos en session_state
                         st.session_state['caso_actual'] = descripcion_caso
                         st.session_state['ultimo_resultado'] = res
+                        st.session_state['modulos_activos'] = modulos_activos
+                        st.session_state['context'] = context
+                        
+                        # Marcar que hay un caso pendiente
+                        st.session_state['caso_pendiente_tribunal'] = True
+                        
                         st.success("✅ Caso enviado al Tribunal de Adversarios.")
+                        st.info("👉 Navega a la página 'Tribunal Adversarios' para ver el debate.")
                         st.balloons()
                 
                 with col_act2:
