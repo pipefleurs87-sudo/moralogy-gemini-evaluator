@@ -368,12 +368,8 @@ if analyze_button:
                         st.session_state['caso_pendiente_tribunal'] = True
                         
                         st.success("✅ Caso enviado al Tribunal de Adversarios.")
+                        st.info("👉 **Ve a 'Tribunal Adversarios' en el menú lateral izquierdo** para ver el debate tripartito.")
                         st.balloons()
-                        
-                        # Redirigir automáticamente
-                        st.info("🔄 Redirigiendo al Tribunal...")
-                        time.sleep(1)
-                        st.switch_page("pages/05_Tribunal_Adversarios.py")
                 
                 with col_act2:
                     if st.button("💾 Save Analysis", use_container_width=True):
