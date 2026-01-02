@@ -1,0 +1,456 @@
+"""
+🔍 STRING VALIDATOR
+Sistema de validación de sintaxis para prevenir errores de strings no terminados
+
+Detecta y corrige automáticamente:
+- Strings literales no terminados
+- Comillas sin cerrar
+- F-strings malformados
+- Strings multilínea incorrectos
+"""
+
+import re
+import ast
+from typing import List, Dict, Tuple, Optional
+from dataclasses import dataclass
+
+@dataclass
+class ValidationError:
+    """Error de validación detectado"""
+    line: int
+    column: int
+    error_type: str
+    message: str
+    suggestion: str
+
+class StringValidator:
+    """
+    Validador de strings y sintaxis Python
+    
+    Previene errores como:
+    - SyntaxError: unterminated string literal
+    - SyntaxError: EOL while scanning string literal
+    - SyntaxError: invalid string prefix
+    """
+    
+    def __init__(self):
+        self.errors: List[ValidationError] = []
+        
+        # Patrones de strings válidos
+        self.string_patterns = {
+            'single': r"'[^'\\]*(\\.[^'\\]*)*'",
+            'double': r'"[^"\\]*(\\.[^"\\]*)*"',
+            'triple_single': r"'''.*?'''",
+            'triple_double': r'""".*?"""',
+            'raw_single': r"r'[^'\\]*(\\.[^'\\]*)*'",
+            'raw_double': r'r"[^"\\]*(\\.[^"\\]*)*"',
+            'f_single': r"f'[^'\\]*(\\.[^'\\]*)*'",
+            'f_double': r'f"[^"\\]*(\\.[^"\\]*)*"'
+        }
+    
+    def validate_code(self, code: str) -> Tuple[bool, List[ValidationError]]:
+        """
+        Valida código Python completo
+        
+        Args:
+            code: Código Python como string
+            
+        Returns:
+            (es_válido, lista_de_errores)
+        """
+        self.errors = []
+        
+        # Validar sintaxis general
+        try:
+            ast.parse(code)
+            return True, []
+        except SyntaxError as e:
+            self.errors.append(ValidationError(
+                line=e.lineno or 0,
+                column=e.offset or 0,
+                error_type="SyntaxError",
+                message=str(e.msg),
+                suggestion=self._generate_suggestion(code, e)
+            ))
+            return False, self.errors
+    
+    def find_unterminated_strings(self, code: str) -> List[ValidationError]:
+        """
+        Encuentra strings no terminados específicamente
+        
+        Args:
+            code: Código Python
+            
+        Returns:
+            Lista de errores de strings no terminados
+        """
+        errors = []
+        lines = code.split('\n')
+        
+        for line_num, line in enumerate(lines, 1):
+            # Buscar strings no terminados
+            unterminated = self._check_unterminated_in_line(line, line_num)
+            errors.extend(unterminated)
+        
+        return errors
+    
+    def _check_unterminated_in_line(self, line: str, line_num: int) -> List[ValidationError]:
+        """Verifica strings no terminados en una línea"""
+        errors = []
+        
+        # Remover comentarios
+        if '#' in line:
+            comment_pos = line.find('#')
+            # Verificar que el # no esté dentro de un string
+            before_comment = line[:comment_pos]
+            if self._count_quotes(before_comment) % 2 == 0:
+                line = before_comment
+        
+        # Contar comillas
+        single_quotes = line.count("'") - line.count("\\'")
+        double_quotes = line.count('"') - line.count('\\"')
+        
+        # Verificar balance de comillas
+        if single_quotes % 2 != 0:
+            errors.append(ValidationError(
+                line=line_num,
+                column=line.rfind("'"),
+                error_type="UnterminatedString",
+                message="String con comilla simple no terminado",
+                suggestion=f"Añadir ' al final: {line.strip()}'"
+            ))
+        
+        if double_quotes % 2 != 0:
+            errors.append(ValidationError(
+                line=line_num,
+                column=line.rfind('"'),
+                error_type="UnterminatedString",
+                message="String con comilla doble no terminado",
+                suggestion=f'Añadir " al final: {line.strip()}"'
+            ))
+        
+        return errors
+    
+    def _count_quotes(self, text: str) -> int:
+        """Cuenta comillas no escapadas"""
+        count = 0
+        escaped = False
+        
+        for char in text:
+            if char == '\\' and not escaped:
+                escaped = True
+                continue
+            if char in ['"', "'"] and not escaped:
+                count += 1
+            escaped = False
+        
+        return count
+    
+    def _generate_suggestion(self, code: str, error: SyntaxError) -> str:
+        """Genera sugerencia de corrección basada en el error"""
+        
+        if "unterminated string literal" in str(error.msg):
+            return "Cerrar el string con la comilla correspondiente"
+        
+        elif "EOL while scanning string literal" in str(error.msg):
+            return "El string continúa en múltiples líneas. Usar triple comillas (''' o \"\"\")"
+        
+        elif "invalid string prefix" in str(error.msg):
+            return "Prefijo de string inválido. Usar: r, f, b, u, o combinaciones válidas (rf, rb)"
+        
+        else:
+            return "Revisar la sintaxis del string en esta línea"
+    
+    def auto_fix(self, code: str) -> str:
+        """
+        Intenta auto-corregir strings no terminados
+        
+        Args:
+            code: Código con posibles errores
+            
+        Returns:
+            Código corregido (mejor esfuerzo)
+        """
+        lines = code.split('\n')
+        fixed_lines = []
+        
+        for line in lines:
+            fixed_line = self._fix_line(line)
+            fixed_lines.append(fixed_line)
+        
+        return '\n'.join(fixed_lines)
+    
+    def _fix_line(self, line: str) -> str:
+        """Intenta corregir una línea con strings no terminados"""
+        
+        # Si hay comentario, preservarlo
+        comment = ""
+        if '#' in line:
+            parts = line.split('#', 1)
+            before = parts[0]
+            if self._count_quotes(before) % 2 == 0:
+                line = before
+                comment = f"#{parts[1]}"
+        
+        # Contar comillas
+        single_count = line.count("'") - line.count("\\'")
+        double_count = line.count('"') - line.count('\\"')
+        
+        # Corregir comillas simples
+        if single_count % 2 != 0:
+            line = line + "'"
+        
+        # Corregir comillas dobles
+        if double_count % 2 != 0:
+            line = line + '"'
+        
+        return line + comment if comment else line
+    
+    def validate_file(self, filepath: str) -> Tuple[bool, List[ValidationError]]:
+        """
+        Valida un archivo Python completo
+        
+        Args:
+            filepath: Ruta al archivo .py
+            
+        Returns:
+            (es_válido, lista_de_errores)
+        """
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                code = f.read()
+            
+            return self.validate_code(code)
+        
+        except FileNotFoundError:
+            return False, [ValidationError(
+                line=0,
+                column=0,
+                error_type="FileNotFound",
+                message=f"Archivo no encontrado: {filepath}",
+                suggestion="Verificar la ruta del archivo"
+            )]
+    
+    def generate_report(self) -> str:
+        """Genera reporte de validación legible"""
+        
+        if not self.errors:
+            return "✅ No se encontraron errores de validación"
+        
+        report = f"❌ Se encontraron {len(self.errors)} errores:\n\n"
+        
+        for i, error in enumerate(self.errors, 1):
+            report += f"{i}. Línea {error.line}, Columna {error.column}\n"
+            report += f"   Tipo: {error.error_type}\n"
+            report += f"   Mensaje: {error.message}\n"
+            report += f"   Sugerencia: {error.suggestion}\n\n"
+        
+        return report
+
+
+class SmartStringFixer:
+    """
+    Corrector inteligente de strings para Streamlit apps
+    
+    Específicamente diseñado para:
+    - Strings multilínea en Streamlit
+    - F-strings con comillas
+    - Markdown con código embebido
+    """
+    
+    def __init__(self):
+        self.validator = StringValidator()
+    
+    def fix_streamlit_strings(self, code: str) -> str:
+        """
+        Corrige strings específicos de Streamlit
+        
+        Maneja casos como:
+        - st.markdown con código
+        - st.code con sintaxis
+        - st.text con multilínea
+        """
+        
+        # Patrón para detectar st.markdown/code/text con strings multilínea
+        pattern = r'(st\.(markdown|code|text|write)\s*\([^)]*["\'][^"\']*$)'
+        
+        lines = code.split('\n')
+        fixed_lines = []
+        in_multiline = False
+        quote_type = None
+        
+        for i, line in enumerate(lines):
+            # Detectar inicio de string multilínea en Streamlit
+            if re.search(pattern, line):
+                in_multiline = True
+                # Determinar tipo de comilla
+                if '"""' in line or "'''" in line:
+                    quote_type = '"""' if '"""' in line else "'''"
+                else:
+                    quote_type = '"' if '"' in line else "'"
+            
+            # Si estamos en multilínea y no hay cierre
+            if in_multiline:
+                if quote_type in line and i > 0:
+                    in_multiline = False
+                    quote_type = None
+            
+            fixed_lines.append(line)
+        
+        # Si quedó un multilínea abierto, cerrarlo
+        if in_multiline and quote_type:
+            fixed_lines.append(quote_type + ")")
+        
+        return '\n'.join(fixed_lines)
+    
+    def wrap_long_strings(self, code: str, max_length: int = 100) -> str:
+        """
+        Envuelve strings largos en formato multilínea
+        
+        Args:
+            code: Código original
+            max_length: Longitud máxima de línea
+            
+        Returns:
+            Código con strings envueltos
+        """
+        lines = code.split('\n')
+        wrapped_lines = []
+        
+        for line in lines:
+            if len(line) > max_length and ('"' in line or "'" in line):
+                wrapped = self._wrap_string_line(line, max_length)
+                wrapped_lines.extend(wrapped)
+            else:
+                wrapped_lines.append(line)
+        
+        return '\n'.join(wrapped_lines)
+    
+    def _wrap_string_line(self, line: str, max_length: int) -> List[str]:
+        """Envuelve una línea con string largo"""
+        
+        # Si la línea tiene asignación
+        if '=' in line:
+            var, value = line.split('=', 1)
+            value = value.strip()
+            
+            # Si el valor es un string largo
+            if value.startswith('"') or value.startswith("'"):
+                quote = value[0]
+                content = value[1:-1] if value.endswith(quote) else value[1:]
+                
+                # Dividir en chunks
+                chunks = [content[i:i+max_length] 
+                         for i in range(0, len(content), max_length)]
+                
+                wrapped = [f"{var} = {quote}{chunks[0]}"]
+                for chunk in chunks[1:]:
+                    wrapped.append(f"    {chunk}")
+                wrapped[-1] += quote
+                
+                return wrapped
+        
+        return [line]
+
+
+# ==========================================
+# UTILIDADES DE DEBUGGING
+# ==========================================
+
+def debug_syntax_error(error: SyntaxError) -> Dict:
+    """
+    Analiza un SyntaxError y proporciona contexto
+    
+    Args:
+        error: SyntaxError capturado
+        
+    Returns:
+        Dict con información de debugging
+    """
+    return {
+        'mensaje': str(error.msg),
+        'línea': error.lineno,
+        'columna': error.offset,
+        'texto': error.text,
+        'tipo': 'String no terminado' if 'unterminated' in str(error.msg) else 'Otro',
+        'archivo': error.filename
+    }
+
+
+# ==========================================
+# EJEMPLO DE USO
+# ==========================================
+
+if __name__ == "__main__":
+    
+    # Ejemplo 1: Código con string no terminado
+    print("=" * 60)
+    print("EJEMPLO 1: Detectar string no terminado")
+    print("=" * 60)
+    
+    bad_code = '''
+import streamlit as st
+
+st.markdown("Este es un texto sin cerrar)
+st.write("Otro texto")
+    '''
+    
+    validator = StringValidator()
+    is_valid, errors = validator.validate_code(bad_code)
+    
+    print(f"¿Es válido?: {is_valid}")
+    if errors:
+        print(validator.generate_report())
+    
+    # Ejemplo 2: Auto-corrección
+    print("\n" + "=" * 60)
+    print("EJEMPLO 2: Auto-corrección")
+    print("=" * 60)
+    
+    fixed_code = validator.auto_fix(bad_code)
+    print("Código corregido:")
+    print(fixed_code)
+    
+    # Validar código corregido
+    is_valid_fixed, _ = validator.validate_code(fixed_code)
+    print(f"\n¿Código corregido es válido?: {is_valid_fixed}")
+    
+    # Ejemplo 3: Smart fixer para Streamlit
+    print("\n" + "=" * 60)
+    print("EJEMPLO 3: Corrector inteligente para Streamlit")
+    print("=" * 60)
+    
+    streamlit_code = '''
+import streamlit as st
+
+st.markdown("""
+Este es un texto muy largo que se extiende 
+por múltiples líneas en Streamlit
+)
+
+st.code("print('hola')")
+    '''
+    
+    fixer = SmartStringFixer()
+    fixed_streamlit = fixer.fix_streamlit_strings(streamlit_code)
+    
+    print("Código Streamlit corregido:")
+    print(fixed_streamlit)
+    
+    # Ejemplo 4: Validar archivo
+    print("\n" + "=" * 60)
+    print("EJEMPLO 4: Validación de archivos del proyecto")
+    print("=" * 60)
+    
+    files_to_check = [
+        'app.py',
+        'motor_logico.py',
+        'pages/05_Divine_Lock.py'
+    ]
+    
+    print("Archivos a validar:")
+    for filepath in files_to_check:
+        print(f"  - {filepath}")
+    
+    print("\nPara validar archivos reales, usar:")
+    print("validator.validate_file('ruta/al/archivo.py')")
