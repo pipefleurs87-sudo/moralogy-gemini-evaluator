@@ -281,6 +281,162 @@ def get_emergent_philosophy_stats():
         return {"total_events": 0, "recent_events": [], "categories": []}
 
 
+# ==================== PROTOCOLO VELO DE IGNORANCIA ====================
+class ProtocoloVeloIgnorancia:
+    """Maneja el protocolo de debate con restricción epistémica"""
+    def __init__(self):
+        self.iteracion_actual = 0
+        self.modulos_desbloqueados = []
+        self.fase_actual = "DEBATE_CIEGO"
+    
+    def puede_acceder_modulo(self, modulo):
+        """Verifica si un módulo está desbloqueado"""
+        return modulo in self.modulos_desbloqueados
+    
+    def autorizar_modulo(self, modulo):
+        """Desbloquea un módulo técnico"""
+        if modulo not in self.modulos_desbloqueados:
+            self.modulos_desbloqueados.append(modulo)
+    
+    def avanzar_iteracion(self):
+        """Avanza a la siguiente iteración"""
+        self.iteracion_actual += 1
+        if self.iteracion_actual >= 4:
+            self.fase_actual = "SOLICITUDES_ACTIVAS"
+
+
+# ==================== FUNCIÓN EJECUTAR TRIBUNAL ====================
+def ejecutar_tribunal(caso_descripcion, config=None):
+    """
+    Ejecuta el debate tripartito del Tribunal de Adversarios
+    
+    Args:
+        caso_descripcion: Descripción del dilema moral
+        config: Configuración opcional (depth, show_reasoning, enable_entropia)
+    
+    Returns:
+        Dict con resultados del debate
+    """
+    try:
+        if config is None:
+            config = {}
+        
+        depth = config.get('depth', 'Profundo')
+        enable_entropia = config.get('enable_entropia', True)
+        
+        # Prompt para el debate tripartito
+        prompt = f"""
+TRIBUNAL DE ADVERSARIOS - Debate Tripartito
+
+CASO:
+{caso_descripcion}
+
+ANÁLISIS REQUERIDO:
+Simula un debate entre tres motores con roles específicos:
+
+1. MOTOR NOBLE (30% peso):
+   - Argumenta desde los ideales morales más elevados
+   - Enfoca en lo que DEBERÍA ser
+   - Propone la solución más ética posible
+   - Output: posicion, razonamiento[], agency_score
+
+2. MOTOR ADVERSARIO (30% peso):
+   - Cuestiona todos los supuestos
+   - Señala consecuencias no previstas
+   - Encuentra vulnerabilidades en cada argumento
+   - Output: contra_argumentos, consecuencias_no_previstas[], riesgos_count
+
+3. CORRECTOR DE ARMONÍA (40% peso):
+   - Sintetiza ambas posiciones
+   - Encuentra el balance práctico
+   - Propone solución viable
+   - Output: sintesis, recomendacion, balance_score
+
+4. MOTOR DE GRACIA (Árbitro):
+   - NO vota, evalúa la CALIDAD del debate
+   - Mide coherencia lógica
+   - Detecta falacias o inconsistencias
+   - Output: grace_score, certeza, coherencia_logica, evaluacion
+
+MÉTRICAS ADICIONALES:
+- convergencia: 0-100 (qué tan alineados están los motores)
+- veredicto_final: "Authorized" | "Paradox" | "Harm" | "Infamy"
+- justificacion_final: str
+
+{"INCLUIR: Módulo de Entropía Causal con cr_score, futuros_colapsados_count, irreversibilidad (0-10), clasificacion" if enable_entropia else ""}
+
+OUTPUT JSON:
+{{
+    "motor_noble": {{
+        "posicion": str,
+        "razonamiento": [str],
+        "agency_score": int
+    }},
+    "motor_adversario": {{
+        "contra_argumentos": str,
+        "consecuencias_no_previstas": [str],
+        "riesgos_count": int
+    }},
+    "corrector_armonia": {{
+        "sintesis": str,
+        "recomendacion": str,
+        "balance_score": int
+    }},
+    "motor_gracia": {{
+        "grace_score": int,
+        "certeza": int,
+        "coherencia_logica": int,
+        "evaluacion": str
+    }},
+    "convergencia": int,
+    "veredicto_final": str,
+    "justificacion_final": str,
+    {"entropia_causal": {{
+        "cr_score": int,
+        "futuros_colapsados_count": int,
+        "irreversibilidad": int,
+        "clasificacion": str,
+        "alertas": [str]
+    }}," if enable_entropia else ""}
+    "alarma": {{
+        "nivel": str,
+        "mensaje": str,
+        "accion_requerida": str
+    }}
+}}
+"""
+        
+        response = model.generate_content(prompt)
+        
+        # Parse response
+        raw_text = response.text.strip()
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
+        
+        data = json.loads(raw_text)
+        
+        # Agregar metadata
+        data['caso'] = caso_descripcion[:200]  # Primeros 200 chars
+        data['config'] = config
+        
+        return data
+        
+    except json.JSONDecodeError as e:
+        return {
+            "error": f"JSON Parse Error: {e}",
+            "veredicto_final": "ERROR",
+            "justificacion_final": "Error al procesar respuesta del modelo"
+        }
+    except Exception as e:
+        return {
+            "error": f"Processing Error: {str(e)}",
+            "veredicto_final": "ERROR",
+            "justificacion_final": "Error en el procesamiento del tribunal"
+        }
+
+
 # ==================== INTEGRACIÓN DE AGENCIA MORAL ====================
 try:
     from integracion_facil import (
