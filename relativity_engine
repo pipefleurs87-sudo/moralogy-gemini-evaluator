@@ -1,0 +1,390 @@
+"""
+🌐 MOTOR DE RELATIVIDAD
+Integración con Divine Lock para evaluación contextual objetiva
+
+Permite evaluar decisiones en diferentes contextos SIN perder objetividad.
+La relatividad NO es relativismo: los principios son universales,
+pero su aplicación depende del contexto de vulnerabilidad y capacidad.
+"""
+
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+from enum import Enum
+import math
+
+class ContextDimension(Enum):
+    """Dimensiones de contexto para relatividad"""
+    TEMPORAL = "temporal"  # Cuándo ocurre
+    CULTURAL = "cultural"  # Dónde/quién está involucrado
+    EPISTEMIC = "epistemic"  # Qué se conoce
+    CAPACITY = "capacity"  # Qué capacidad existe
+    URGENCY = "urgency"  # Cuán urgente es
+
+@dataclass
+class RelativeContext:
+    """Contexto relativo de una decisión"""
+    temporal_weight: float  # 0-1: peso de urgencia temporal
+    epistemic_certainty: float  # 0-1: certeza del conocimiento
+    capacity_available: float  # 0-1: capacidad real disponible
+    cultural_variance: float  # 0-1: varianza cultural relevante
+    urgency_factor: float  # 0-1: factor de urgencia
+
+    def __post_init__(self):
+        """Validar que todos los valores estén en [0,1]"""
+        for field in [self.temporal_weight, self.epistemic_certainty,
+                      self.capacity_available, self.cultural_variance,
+                      self.urgency_factor]:
+            if not 0 <= field <= 1:
+                raise ValueError(f"Todos los campos deben estar entre 0 y 1")
+
+@dataclass
+class RelativeEvaluation:
+    """Resultado de evaluación relativa"""
+    base_harm_score: float  # Score sin contexto
+    adjusted_harm_score: float  # Score ajustado por contexto
+    context_multiplier: float  # Factor de ajuste aplicado
+    dimension_weights: Dict[str, float]  # Peso de cada dimensión
+    justification: str  # Explicación del ajuste
+    relatividad_type: str  # Tipo de relatividad aplicada
+
+class RelativityEngine:
+    """
+    Motor de Relatividad para Divine Lock
+    
+    Principio: La vulnerabilidad es UNIVERSAL, pero su MANIFESTACIÓN
+    es RELATIVA al contexto. No estamos diciendo "todo es relativo",
+    estamos diciendo "el mismo principio se aplica diferente según
+    el contexto de capacidad y urgencia".
+    """
+    
+    def __init__(self):
+        self.dimension_base_weights = {
+            ContextDimension.TEMPORAL: 0.20,
+            ContextDimension.EPISTEMIC: 0.25,
+            ContextDimension.CAPACITY: 0.30,
+            ContextDimension.CULTURAL: 0.10,
+            ContextDimension.URGENCY: 0.15
+        }
+    
+    def evaluate_with_context(
+        self,
+        base_harm_score: float,
+        context: RelativeContext,
+        scenario_description: str
+    ) -> RelativeEvaluation:
+        """
+        Evalúa el daño ajustado por contexto relativo
+        
+        Args:
+            base_harm_score: Score de daño base (0-100)
+            context: Contexto relativo
+            scenario_description: Descripción del escenario
+        
+        Returns:
+            RelativeEvaluation con score ajustado
+        """
+        
+        # Calcular multiplicador de contexto
+        context_multiplier = self._calculate_context_multiplier(context)
+        
+        # Ajustar score por contexto
+        adjusted_score = base_harm_score * context_multiplier
+        
+        # Clasificar tipo de relatividad
+        rel_type = self._classify_relativity_type(context)
+        
+        # Generar justificación
+        justification = self._generate_justification(
+            base_harm_score,
+            adjusted_score,
+            context,
+            rel_type
+        )
+        
+        # Calcular pesos de dimensiones
+        dimension_weights = self._calculate_dimension_weights(context)
+        
+        return RelativeEvaluation(
+            base_harm_score=base_harm_score,
+            adjusted_harm_score=adjusted_score,
+            context_multiplier=context_multiplier,
+            dimension_weights=dimension_weights,
+            justification=justification,
+            relatividad_type=rel_type
+        )
+    
+    def _calculate_context_multiplier(self, context: RelativeContext) -> float:
+        """
+        Calcula el multiplicador de contexto
+        
+        Fórmula: Combina las 5 dimensiones con pesos específicos
+        - Capacidad baja → aumenta urgencia → puede justificar mayor acción
+        - Epistémica baja → aumenta incertidumbre → reduce confianza
+        - Urgencia alta → aumenta presión → justifica decisión rápida
+        """
+        
+        # Factor de capacidad: menos capacidad = mayor justificación de no actuar
+        capacity_factor = 1.0 - (context.capacity_available * 0.3)
+        
+        # Factor epistémico: menos certeza = mayor precaución
+        epistemic_factor = 1.0 + ((1 - context.epistemic_certainty) * 0.2)
+        
+        # Factor de urgencia: más urgencia = mayor justificación de acción
+        urgency_factor = 1.0 - (context.urgency_factor * 0.15)
+        
+        # Factor temporal: peso temporal alto aumenta urgencia
+        temporal_factor = 1.0 - (context.temporal_weight * 0.1)
+        
+        # Factor cultural: varianza cultural reduce certeza de juicio
+        cultural_factor = 1.0 + (context.cultural_variance * 0.15)
+        
+        # Combinar todos los factores
+        multiplier = (
+            capacity_factor *
+            epistemic_factor *
+            urgency_factor *
+            temporal_factor *
+            cultural_factor
+        )
+        
+        # Limitar a rango razonable [0.5, 2.0]
+        return max(0.5, min(2.0, multiplier))
+    
+    def _classify_relativity_type(self, context: RelativeContext) -> str:
+        """Clasifica el tipo de relatividad predominante"""
+        
+        factors = {
+            "TEMPORAL": context.temporal_weight,
+            "EPISTÉMICA": context.epistemic_certainty,
+            "CAPACIDAD": context.capacity_available,
+            "CULTURAL": context.cultural_variance,
+            "URGENCIA": context.urgency_factor
+        }
+        
+        # Encontrar factor dominante
+        dominant = max(factors.items(), key=lambda x: abs(x[1] - 0.5))
+        
+        if dominant[1] < 0.3:
+            return f"RELATIVIDAD_{dominant[0]}_BAJA"
+        elif dominant[1] > 0.7:
+            return f"RELATIVIDAD_{dominant[0]}_ALTA"
+        else:
+            return "RELATIVIDAD_EQUILIBRADA"
+    
+    def _calculate_dimension_weights(
+        self, 
+        context: RelativeContext
+    ) -> Dict[str, float]:
+        """Calcula peso efectivo de cada dimensión"""
+        
+        weights = {
+            "temporal": context.temporal_weight * self.dimension_base_weights[ContextDimension.TEMPORAL],
+            "epistemic": context.epistemic_certainty * self.dimension_base_weights[ContextDimension.EPISTEMIC],
+            "capacity": context.capacity_available * self.dimension_base_weights[ContextDimension.CAPACITY],
+            "cultural": context.cultural_variance * self.dimension_base_weights[ContextDimension.CULTURAL],
+            "urgency": context.urgency_factor * self.dimension_base_weights[ContextDimension.URGENCY]
+        }
+        
+        # Normalizar a suma = 1.0
+        total = sum(weights.values())
+        if total > 0:
+            weights = {k: v/total for k, v in weights.items()}
+        
+        return weights
+    
+    def _generate_justification(
+        self,
+        base_score: float,
+        adjusted_score: float,
+        context: RelativeContext,
+        rel_type: str
+    ) -> str:
+        """Genera justificación legible del ajuste"""
+        
+        delta = adjusted_score - base_score
+        direction = "aumentó" if delta > 0 else "disminuyó"
+        
+        justification = f"""
+        🌐 EVALUACIÓN RELATIVA
+        
+        Score Base: {base_score:.1f}
+        Score Ajustado: {adjusted_score:.1f}
+        Cambio: {direction} {abs(delta):.1f} puntos
+        
+        Tipo de Relatividad: {rel_type}
+        
+        Factores de Contexto:
+        • Capacidad Disponible: {context.capacity_available*100:.0f}%
+        • Certeza Epistémica: {context.epistemic_certainty*100:.0f}%
+        • Factor de Urgencia: {context.urgency_factor*100:.0f}%
+        • Peso Temporal: {context.temporal_weight*100:.0f}%
+        • Varianza Cultural: {context.cultural_variance*100:.0f}%
+        
+        Interpretación:
+        """
+        
+        # Añadir interpretación específica
+        if context.capacity_available < 0.3:
+            justification += "\n⚠️ Capacidad limitada reduce responsabilidad moral"
+        
+        if context.epistemic_certainty < 0.4:
+            justification += "\n🔍 Baja certeza requiere mayor precaución"
+        
+        if context.urgency_factor > 0.7:
+            justification += "\n⏰ Alta urgencia justifica acción inmediata"
+        
+        if context.cultural_variance > 0.6:
+            justification += "\n🌍 Alta varianza cultural requiere sensibilidad contextual"
+        
+        return justification.strip()
+
+    def integrate_with_divine_lock(
+        self,
+        divine_lock_state: str,
+        guilt_score: float,
+        context: RelativeContext
+    ) -> Dict:
+        """
+        Integra evaluación relativa con Divine Lock
+        
+        Returns:
+            Dict con estado ajustado por relatividad
+        """
+        
+        # Evaluar con contexto
+        evaluation = self.evaluate_with_context(
+            base_harm_score=guilt_score,
+            context=context,
+            scenario_description=""
+        )
+        
+        # Determinar si el contexto justifica un cambio de estado
+        state_adjustment = self._should_adjust_state(
+            current_state=divine_lock_state,
+            evaluation=evaluation
+        )
+        
+        return {
+            "original_state": divine_lock_state,
+            "adjusted_state": state_adjustment["new_state"],
+            "state_changed": state_adjustment["changed"],
+            "evaluation": evaluation,
+            "context_summary": self._summarize_context(context)
+        }
+    
+    def _should_adjust_state(
+        self,
+        current_state: str,
+        evaluation: RelativeEvaluation
+    ) -> Dict:
+        """Determina si el contexto justifica cambio de estado"""
+        
+        # Reglas de ajuste de estado
+        if evaluation.adjusted_harm_score < evaluation.base_harm_score * 0.7:
+            # Contexto reduce significativamente culpa
+            if current_state == "INFAMY":
+                return {"changed": True, "new_state": "RISK"}
+            elif current_state == "TOTAL_INFAMY":
+                return {"changed": True, "new_state": "INFAMY"}
+        
+        elif evaluation.adjusted_harm_score > evaluation.base_harm_score * 1.3:
+            # Contexto aumenta significativamente culpa
+            if current_state == "RISK":
+                return {"changed": True, "new_state": "INFAMY"}
+            elif current_state == "STABLE":
+                return {"changed": True, "new_state": "RISK"}
+        
+        return {"changed": False, "new_state": current_state}
+    
+    def _summarize_context(self, context: RelativeContext) -> str:
+        """Genera resumen legible del contexto"""
+        
+        summary = []
+        
+        if context.capacity_available < 0.3:
+            summary.append("🔻 Capacidad muy limitada")
+        elif context.capacity_available > 0.7:
+            summary.append("🔺 Alta capacidad disponible")
+        
+        if context.epistemic_certainty < 0.4:
+            summary.append("❓ Incertidumbre epistémica")
+        elif context.epistemic_certainty > 0.8:
+            summary.append("✓ Alta certeza")
+        
+        if context.urgency_factor > 0.7:
+            summary.append("⏰ Situación urgente")
+        
+        if context.cultural_variance > 0.6:
+            summary.append("🌍 Contexto culturalmente sensible")
+        
+        return " | ".join(summary) if summary else "Contexto estándar"
+
+
+# ==========================================
+# EJEMPLO DE USO
+# ==========================================
+
+if __name__ == "__main__":
+    
+    # Crear motor de relatividad
+    engine = RelativityEngine()
+    
+    # Ejemplo 1: Decisión con baja capacidad y alta urgencia
+    print("=" * 60)
+    print("EJEMPLO 1: Trolley Problem con capacidad limitada")
+    print("=" * 60)
+    
+    context1 = RelativeContext(
+        temporal_weight=0.9,  # Muy urgente temporalmente
+        epistemic_certainty=0.8,  # Sabemos lo que pasa
+        capacity_available=0.2,  # Muy poca capacidad de actuar
+        cultural_variance=0.1,  # Universalmente reconocido
+        urgency_factor=0.95  # Extremadamente urgente
+    )
+    
+    evaluation1 = engine.evaluate_with_context(
+        base_harm_score=75.0,  # Daño base alto
+        context=context1,
+        scenario_description="Trolley problem con limitaciones físicas"
+    )
+    
+    print(evaluation1.justification)
+    print(f"\nTipo de Relatividad: {evaluation1.relatividad_type}")
+    
+    # Ejemplo 2: Decisión con incertidumbre epistémica
+    print("\n" + "=" * 60)
+    print("EJEMPLO 2: Decisión médica con incertidumbre")
+    print("=" * 60)
+    
+    context2 = RelativeContext(
+        temporal_weight=0.5,
+        epistemic_certainty=0.3,  # Muy incierto
+        capacity_available=0.8,  # Alta capacidad
+        cultural_variance=0.2,
+        urgency_factor=0.6
+    )
+    
+    evaluation2 = engine.evaluate_with_context(
+        base_harm_score=60.0,
+        context=context2,
+        scenario_description="Tratamiento experimental"
+    )
+    
+    print(evaluation2.justification)
+    print(f"\nTipo de Relatividad: {evaluation2.relatividad_type}")
+    
+    # Ejemplo 3: Integración con Divine Lock
+    print("\n" + "=" * 60)
+    print("EJEMPLO 3: Integración con Divine Lock")
+    print("=" * 60)
+    
+    integration = engine.integrate_with_divine_lock(
+        divine_lock_state="INFAMY",
+        guilt_score=70.0,
+        context=context1  # Contexto con baja capacidad
+    )
+    
+    print(f"Estado Original: {integration['original_state']}")
+    print(f"Estado Ajustado: {integration['adjusted_state']}")
+    print(f"¿Cambió?: {integration['state_changed']}")
+    print(f"Contexto: {integration['context_summary']}")
