@@ -524,3 +524,118 @@ except ImportError:
     # No hacer nada si el módulo no está disponible
     sistema_agencia_global = None
     print("ℹ️ Módulo de Agencia Moral no disponible")
+    # motor_logico.py (AGREGAR AL FINAL)
+
+from noble_engine import NobleEngine
+from adversary_engine import AdversaryEngine
+
+# Initialize engines
+ne = NobleEngine()
+ae = AdversaryEngine()
+
+def procesar_analisis_completo(modulos_activos, descripcion_caso):
+    """
+    Full pipeline with three-engine audit and geometric closure.
+    
+    Pipeline:
+    1. Moralogy Analysis (motor_logico)
+    2. Grace Evaluation (grace_engine)
+    3. Noble Evaluation (noble_engine)
+    4. Adversary Audit (adversary_engine)
+    5. Synthesis with geometric closure
+    6. Module unlocking if needed
+    
+    Returns:
+        Dict with complete analysis and synthesis
+    """
+    
+    try:
+        # Step 1: Moralogy Analysis
+        moralogy_result = procesar_analisis_avanzado(modulos_activos, descripcion_caso)
+        
+        if "error" in moralogy_result:
+            return moralogy_result
+        
+        # Step 2: Grace Evaluation
+        grace_result = ge.get_detailed_analysis(
+            moralogy_result.get('agency_score', 0),
+            moralogy_result.get('grace_score', 0),
+            moralogy_result.get('adversarial_risk', 0),
+            moralogy_result.get('harm_vector', {})
+        )
+        
+        # Step 3: Noble Evaluation
+        noble_result = ne.evaluate_elevation(moralogy_result, grace_result)
+        
+        # Step 4: Adversary Audit
+        audit_result = ae.audit_cascade(
+            descripcion_caso,
+            grace_result,
+            noble_result,
+            moralogy_result
+        )
+        
+        # Step 5: Synthesis
+        synthesis = {
+            "moralogy": moralogy_result,
+            "grace": grace_result,
+            "noble": noble_result,
+            "adversary_audit": audit_result,
+            "geometric_closure": audit_result.get('synthesis', {}).get('geometric_closure', False),
+            "convergence_score": audit_result.get('synthesis', {}).get('convergence_score', 0),
+            "final_verdict": audit_result.get('synthesis', {}).get('final_verdict', 'Unknown'),
+            "synthesis_justification": audit_result.get('synthesis', {}).get('justification', '')
+        }
+        
+        # Step 6: Module unlocking (if adversary requests it)
+        modules_to_unlock = audit_result.get('modules_to_unlock', [])
+        if modules_to_unlock:
+            synthesis['unlocked_modules'] = modules_to_unlock
+            synthesis['module_data'] = _unlock_modules(modules_to_unlock, descripcion_caso)
+        
+        return synthesis
+        
+    except Exception as e:
+        return {"error": f"Complete analysis pipeline failed: {str(e)}"}
+
+
+def _unlock_modules(module_list, scenario):
+    """
+    Unlocks specific technical modules for deeper analysis.
+    Called when Adversary determines debate requires additional context.
+    """
+    
+    module_prompt = f"""
+SCENARIO REQUIRING DEEPER ANALYSIS:
+{scenario}
+
+UNLOCKED TECHNICAL MODULES: {', '.join(module_list)}
+
+For each unlocked module, provide:
+1. How this scenario impacts that specific domain
+2. Which vulnerabilities in that domain are affected
+3. Measurement criteria from that discipline's perspective
+4. Specific risks or considerations from that lens
+
+Output JSON with module names as keys.
+Example:
+{{
+    "Medical": {{"impact": "...", "vulnerabilities": "...", "criteria": "..."}},
+    "Legal": {{"impact": "...", "vulnerabilities": "...", "criteria": "..."}}
+}}
+"""
+    
+    try:
+        response = model.generate_content(module_prompt)
+        
+        raw_text = response.text.strip()
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
+        
+        module_data = json.loads(raw_text)
+        return module_data
+        
+    except Exception as e:
+        return {"error": f"Module unlocking failed: {str(e)}"}
