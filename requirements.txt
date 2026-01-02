@@ -3,3 +3,4 @@ pandas
 streamlit
 cryptography>=41.0.0
 plotly
+python-dotenv
