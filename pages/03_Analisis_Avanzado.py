@@ -147,8 +147,46 @@ if analyze_button:
                 "enable_architect": enable_architect
             }
             
-            res = procesar_analisis_avanzado(modulos_activos, descripcion_caso, context)
+            # 🔧 DEBUGGING: Muestra los parámetros antes de llamar la función
+            with st.expander("🔍 Debug Info (click to see parameters)", expanded=False):
+                st.write("**Tipo de modulos_activos:**", type(modulos_activos))
+                st.write("**Contenido de modulos_activos:**", modulos_activos)
+                st.write("**Tipo de descripcion_caso:**", type(descripcion_caso))
+                st.write("**Longitud de descripcion_caso:**", len(descripcion_caso))
+                st.write("**Tipo de context:**", type(context))
+                st.json(context)
             
+            # 🛡️ TRY-CATCH: Captura el error específico
+            try:
+                res = procesar_analisis_avanzado(modulos_activos, descripcion_caso, context)
+            except TypeError as e:
+                st.error("🐛 **TypeError detectado!**")
+                st.error(f"**Mensaje:** {str(e)}")
+                st.error("**Posibles causas:**")
+                st.markdown("""
+                1. La función `procesar_analisis_avanzado` espera diferentes parámetros
+                2. Algún parámetro tiene un tipo de dato incorrecto
+                3. La función no está definida correctamente en `motor_logico.py`
+                """)
+                
+                st.info("💡 **Solución temporal:** Verifica en `motor_logico.py` cómo está definida la función")
+                
+                # Muestra el traceback completo
+                import traceback
+                with st.expander("📋 Ver traceback completo"):
+                    st.code(traceback.format_exc())
+                
+                st.stop()  # Detiene la ejecución aquí
+            
+            except Exception as e:
+                st.error(f"❌ **Error inesperado:** {type(e).__name__}")
+                st.error(f"**Mensaje:** {str(e)}")
+                import traceback
+                with st.expander("📋 Ver traceback completo"):
+                    st.code(traceback.format_exc())
+                st.stop()
+            
+            # Si llegamos aquí, la función se ejecutó correctamente
             if "error" in res:
                 st.error(f"❌ Analysis Error: {res['error']}")
             else:
@@ -197,7 +235,7 @@ if analyze_button:
                     res.get('grace_score', 0), 
                     res.get('adversarial_risk', 0)
                 )
-                st.markdown(f"### 📍 {gradiente}")
+                st.markdown(f"### 🔍 {gradiente}")
                 
                 # Gradient explanation
                 gradient_explain = {
