@@ -1,0 +1,492 @@
+"""
+📊 RELATIVITY DISPLAY
+Visualización del Motor de Relatividad para Divine Lock Dashboard
+
+Muestra cómo el contexto ajusta la evaluación moral de forma transparente
+"""
+
+import streamlit as st
+import plotly.graph_objects as go
+from relativity_engine import (
+    RelativityEngine, 
+    RelativeContext, 
+    RelativeEvaluation
+)
+
+class RelativityDisplay:
+    """Componente de visualización para el Motor de Relatividad"""
+    
+    def __init__(self):
+        self.engine = RelativityEngine()
+    
+    def render_context_input(self) -> RelativeContext:
+        """
+        Renderiza interfaz para input de contexto relativo
+        
+        Returns:
+            RelativeContext configurado por el usuario
+        """
+        
+        st.subheader("🌐 Configuración de Contexto Relativo")
+        
+        st.markdown("""
+        **Principio**: La vulnerabilidad es universal, pero su manifestación 
+        es relativa al contexto. Ajusta los parámetros para ver cómo el 
+        contexto modifica la evaluación moral SIN perder objetividad.
+        """)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            temporal_weight = st.slider(
+                "⏰ Peso Temporal/Urgencia",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.5,
+                step=0.05,
+                help="¿Qué tan urgente es temporalmente la decisión?"
+            )
+            
+            epistemic_certainty = st.slider(
+                "🔍 Certeza Epistémica",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.7,
+                step=0.05,
+                help="¿Qué tan seguro estás de las consecuencias?"
+            )
+            
+            capacity_available = st.slider(
+                "💪 Capacidad Disponible",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.6,
+                step=0.05,
+                help="¿Qué capacidad real tienes para actuar?"
+            )
+        
+        with col2:
+            cultural_variance = st.slider(
+                "🌍 Varianza Cultural",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.05,
+                help="¿Qué tan variable es culturalmente?"
+            )
+            
+            urgency_factor = st.slider(
+                "🚨 Factor de Urgencia",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.5,
+                step=0.05,
+                help="¿Qué tan urgente es actuar ahora?"
+            )
+        
+        return RelativeContext(
+            temporal_weight=temporal_weight,
+            epistemic_certainty=epistemic_certainty,
+            capacity_available=capacity_available,
+            cultural_variance=cultural_variance,
+            urgency_factor=urgency_factor
+        )
+    
+    def render_evaluation_result(
+        self,
+        evaluation: RelativeEvaluation,
+        show_details: bool = True
+    ):
+        """
+        Renderiza el resultado de evaluación relativa
+        
+        Args:
+            evaluation: Resultado de evaluación
+            show_details: Si mostrar detalles técnicos
+        """
+        
+        # Métricas principales
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                label="Score Base",
+                value=f"{evaluation.base_harm_score:.1f}",
+                delta=None
+            )
+        
+        with col2:
+            delta_value = evaluation.adjusted_harm_score - evaluation.base_harm_score
+            st.metric(
+                label="Score Ajustado",
+                value=f"{evaluation.adjusted_harm_score:.1f}",
+                delta=f"{delta_value:+.1f}",
+                delta_color="inverse"  # Rojo si aumenta, verde si disminuye
+            )
+        
+        with col3:
+            multiplier_pct = (evaluation.context_multiplier - 1.0) * 100
+            st.metric(
+                label="Multiplicador",
+                value=f"{evaluation.context_multiplier:.2f}x",
+                delta=f"{multiplier_pct:+.1f}%"
+            )
+        
+        # Tipo de relatividad
+        st.info(f"**Tipo de Relatividad:** {evaluation.relatividad_type}")
+        
+        # Justificación
+        with st.expander("📝 Justificación del Ajuste", expanded=True):
+            st.text(evaluation.justification)
+        
+        if show_details:
+            self._render_dimension_weights(evaluation)
+    
+    def _render_dimension_weights(self, evaluation: RelativeEvaluation):
+        """Renderiza gráfico de pesos de dimensiones"""
+        
+        st.subheader("📊 Pesos de Dimensiones")
+        
+        # Crear gráfico de radar
+        categories = list(evaluation.dimension_weights.keys())
+        values = list(evaluation.dimension_weights.values())
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            name='Pesos',
+            line=dict(color='#FF4B4B')
+        ))
+        
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, max(values) * 1.2] if values else [0, 1]
+                )
+            ),
+            showlegend=False,
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    def render_comparison_view(
+        self,
+        base_score: float,
+        contexts: dict  # {name: RelativeContext}
+    ):
+        """
+        Renderiza vista comparativa de múltiples contextos
+        
+        Args:
+            base_score: Score base sin contexto
+            contexts: Dict de contextos a comparar
+        """
+        
+        st.subheader("🔄 Comparación de Contextos")
+        
+        evaluations = {}
+        for name, context in contexts.items():
+            eval_result = self.engine.evaluate_with_context(
+                base_harm_score=base_score,
+                context=context,
+                scenario_description=""
+            )
+            evaluations[name] = eval_result
+        
+        # Gráfico de barras comparativo
+        fig = go.Figure()
+        
+        names = list(evaluations.keys())
+        base_scores = [base_score] * len(names)
+        adjusted_scores = [e.adjusted_harm_score for e in evaluations.values()]
+        
+        fig.add_trace(go.Bar(
+            name='Score Base',
+            x=names,
+            y=base_scores,
+            marker_color='lightgray'
+        ))
+        
+        fig.add_trace(go.Bar(
+            name='Score Ajustado',
+            x=names,
+            y=adjusted_scores,
+            marker_color='#FF4B4B'
+        ))
+        
+        fig.update_layout(
+            title="Comparación de Scores por Contexto",
+            xaxis_title="Contexto",
+            yaxis_title="Score de Daño",
+            barmode='group',
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Tabla de detalles
+        st.subheader("📋 Detalles por Contexto")
+        
+        for name, evaluation in evaluations.items():
+            with st.expander(f"Contexto: {name}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Base", f"{evaluation.base_harm_score:.1f}")
+                    st.metric("Ajustado", f"{evaluation.adjusted_harm_score:.1f}")
+                with col2:
+                    st.metric("Multiplicador", f"{evaluation.context_multiplier:.2f}x")
+                    st.text(f"Tipo: {evaluation.relatividad_type}")
+    
+    def render_divine_lock_integration(
+        self,
+        divine_lock_state: str,
+        guilt_score: float,
+        context: RelativeContext
+    ):
+        """
+        Renderiza integración con Divine Lock
+        
+        Args:
+            divine_lock_state: Estado actual de Divine Lock
+            guilt_score: Score de culpa actual
+            context: Contexto relativo
+        """
+        
+        st.subheader("🔒 Integración con Divine Lock")
+        
+        integration = self.engine.integrate_with_divine_lock(
+            divine_lock_state=divine_lock_state,
+            guilt_score=guilt_score,
+            context=context
+        )
+        
+        # Mostrar cambio de estado
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("**Estado Original**")
+            self._render_state_badge(integration["original_state"])
+        
+        with col2:
+            st.markdown("**Estado Ajustado**")
+            self._render_state_badge(integration["adjusted_state"])
+        
+        with col3:
+            if integration["state_changed"]:
+                st.success("✅ Estado modificado por contexto")
+            else:
+                st.info("ℹ️ Estado sin cambios")
+        
+        # Resumen de contexto
+        st.info(f"**Resumen de Contexto:** {integration['context_summary']}")
+        
+        # Evaluación detallada
+        with st.expander("📊 Evaluación Detallada"):
+            self.render_evaluation_result(integration["evaluation"])
+    
+    def _render_state_badge(self, state: str):
+        """Renderiza badge de estado con color"""
+        
+        colors = {
+            "TOTAL_INFAMY": "🔴",
+            "INFAMY": "🟠",
+            "RISK": "🟡",
+            "STABLE": "🟢",
+            "NOBLE_MODAL": "🌟"
+        }
+        
+        emoji = colors.get(state, "⚪")
+        st.markdown(f"### {emoji} {state}")
+    
+    def render_presets(self) -> dict:
+        """
+        Renderiza presets de contextos comunes
+        
+        Returns:
+            Dict de presets disponibles
+        """
+        
+        presets = {
+            "Trolley Problem Clásico": RelativeContext(
+                temporal_weight=0.95,
+                epistemic_certainty=0.9,
+                capacity_available=0.8,
+                cultural_variance=0.1,
+                urgency_factor=0.95
+            ),
+            "Decisión Médica Incierta": RelativeContext(
+                temporal_weight=0.6,
+                epistemic_certainty=0.3,
+                capacity_available=0.7,
+                cultural_variance=0.4,
+                urgency_factor=0.5
+            ),
+            "Dilema de Recursos Limitados": RelativeContext(
+                temporal_weight=0.7,
+                epistemic_certainty=0.8,
+                capacity_available=0.3,
+                cultural_variance=0.2,
+                urgency_factor=0.8
+            ),
+            "Contexto Culturalmente Complejo": RelativeContext(
+                temporal_weight=0.3,
+                epistemic_certainty=0.6,
+                capacity_available=0.9,
+                cultural_variance=0.9,
+                urgency_factor=0.2
+            ),
+            "Situación Estándar": RelativeContext(
+                temporal_weight=0.5,
+                epistemic_certainty=0.7,
+                capacity_available=0.6,
+                cultural_variance=0.3,
+                urgency_factor=0.5
+            )
+        }
+        
+        st.subheader("📦 Presets de Contexto")
+        
+        selected_preset = st.selectbox(
+            "Selecciona un preset:",
+            options=list(presets.keys()),
+            index=4  # "Situación Estándar" por defecto
+        )
+        
+        if st.button("Cargar Preset"):
+            return {selected_preset: presets[selected_preset]}
+        
+        return {}
+
+
+# ==========================================
+# PÁGINA STREAMLIT DE EJEMPLO
+# ==========================================
+
+def main():
+    """Página de demostración del Motor de Relatividad"""
+    
+    st.set_page_config(
+        page_title="Motor de Relatividad",
+        page_icon="🌐",
+        layout="wide"
+    )
+    
+    st.title("🌐 Motor de Relatividad - Moralogy Evaluator")
+    
+    st.markdown("""
+    **Principio Fundamental**: La vulnerabilidad es UNIVERSAL, pero su 
+    manifestación es RELATIVA al contexto. Este motor no hace ética 
+    relativa - hace aplicación contextual de principios objetivos.
+    """)
+    
+    # Crear display
+    display = RelativityDisplay()
+    
+    # Tabs
+    tab1, tab2, tab3 = st.tabs([
+        "🎛️ Evaluación Individual",
+        "🔄 Comparación de Contextos",
+        "🔒 Integración Divine Lock"
+    ])
+    
+    with tab1:
+        st.header("Evaluación con Contexto Relativo")
+        
+        # Input de score base
+        base_score = st.slider(
+            "Score Base de Daño",
+            min_value=0.0,
+            max_value=100.0,
+            value=60.0,
+            step=1.0
+        )
+        
+        # Input de contexto
+        context = display.render_context_input()
+        
+        # Botón de evaluación
+        if st.button("🔬 Evaluar con Contexto", type="primary"):
+            evaluation = display.engine.evaluate_with_context(
+                base_harm_score=base_score,
+                context=context,
+                scenario_description=""
+            )
+            
+            st.divider()
+            display.render_evaluation_result(evaluation)
+    
+    with tab2:
+        st.header("Comparación de Múltiples Contextos")
+        
+        base_score_comp = st.slider(
+            "Score Base",
+            min_value=0.0,
+            max_value=100.0,
+            value=70.0,
+            step=1.0,
+            key="base_score_comp"
+        )
+        
+        # Presets
+        presets = display.render_presets()
+        
+        if presets or st.button("Comparar Todos los Presets"):
+            if not presets:
+                # Cargar todos los presets
+                presets = {
+                    "Trolley": RelativeContext(0.95, 0.9, 0.8, 0.1, 0.95),
+                    "Médico": RelativeContext(0.6, 0.3, 0.7, 0.4, 0.5),
+                    "Recursos": RelativeContext(0.7, 0.8, 0.3, 0.2, 0.8),
+                    "Cultural": RelativeContext(0.3, 0.6, 0.9, 0.9, 0.2)
+                }
+            
+            display.render_comparison_view(base_score_comp, presets)
+    
+    with tab3:
+        st.header("Integración con Divine Lock")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            divine_state = st.selectbox(
+                "Estado Actual de Divine Lock",
+                options=["STABLE", "RISK", "INFAMY", "TOTAL_INFAMY", "NOBLE_MODAL"],
+                index=0
+            )
+            
+            guilt_score_dl = st.slider(
+                "Score de Culpa",
+                min_value=0.0,
+                max_value=100.0,
+                value=65.0,
+                step=1.0,
+                key="guilt_score_dl"
+            )
+        
+        with col2:
+            context_dl = display.render_context_input()
+        
+        if st.button("🔒 Evaluar Integración", type="primary"):
+            st.divider()
+            display.render_divine_lock_integration(
+                divine_lock_state=divine_state,
+                guilt_score=guilt_score_dl,
+                context=context_dl
+            )
+    
+    # Footer
+    st.divider()
+    st.markdown("""
+    ---
+    **Motor de Relatividad** | Moralogy Gemini Evaluator  
+    *"Principios universales, aplicación contextual"*
+    """)
+
+
+if __name__ == "__main__":
+    main()
