@@ -13,6 +13,65 @@ try:
     
     # Obtener estado
     status = divine_lock.get_status()
+    # Después de obtener status, añadir:
+
+# NUEVO: Mostrar mancha pública
+st.divider()
+st.subheader("🎭 Estado Público de Culpa")
+
+try:
+    from guilt_bearer_display import GuiltyBearerPublicDisplay
+    
+    guilt_display = GuiltyBearerPublicDisplay(divine_lock)
+    public_info = guilt_display.get_public_guilt_display(status["agent"])
+    
+    # Mostrar badge grande
+    badge_colors = {
+        "🌟 NOBLE MODAL": "success",
+        "✅ STABLE": "success",
+        "⚠️ TAINTED": "warning",
+        "🔴 INFAMY": "error",
+        "🚫 TOTAL INFAMY": "error"
+    }
+    
+    badge_color = badge_colors.get(public_info['guilt_badge'], "info")
+    getattr(st, badge_color)(f"### {public_info['guilt_badge']}")
+    
+    # Capacidad con color
+    capacity = public_info['current_capacity']
+    if capacity >= 90:
+        cap_color = "🟢"
+    elif capacity >= 70:
+        cap_color = "🟡"
+    elif capacity >= 50:
+        cap_color = "🟠"
+    else:
+        cap_color = "🔴"
+    
+    st.metric(
+        "Capacidad Operacional Visible", 
+        f"{cap_color} {capacity}%",
+        help="Este porcentaje es PÚBLICO. Indica el grado de culpa moral acumulada."
+    )
+    
+    # Mostrar shame statement si existe
+    if public_info['public_shame_statement']:
+        st.error(f"⚠️ {public_info['public_shame_statement']}")
+    
+    # Contador de infamias
+    if public_info['infamy_count'] > 0:
+        st.warning(f"📊 Transgresiones Registradas: {public_info['infamy_count']}")
+    
+    # Tiempo desde última infamia
+    if public_info['years_since_last_infamy'] is not None:
+        st.info(f"⏱️ Años desde última transgresión: {public_info['years_since_last_infamy']}")
+    
+    # Display completo
+    with st.expander("📜 Ver Registro Público Completo"):
+        st.code(public_info['display_message'], language=None)
+    
+except ImportError:
+    st.warning("Módulo de visualización de culpa no disponible")
     
     # Header
     col1, col2, col3, col4 = st.columns(4)
