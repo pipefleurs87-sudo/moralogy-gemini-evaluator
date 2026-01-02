@@ -4,6 +4,7 @@ import sys
 import os
 import json
 from datetime import datetime
+import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -367,8 +368,12 @@ if analyze_button:
                         st.session_state['caso_pendiente_tribunal'] = True
                         
                         st.success("✅ Caso enviado al Tribunal de Adversarios.")
-                        st.info("👉 Navega a la página 'Tribunal Adversarios' para ver el debate.")
                         st.balloons()
+                        
+                        # Redirigir automáticamente
+                        st.info("🔄 Redirigiendo al Tribunal...")
+                        time.sleep(1)
+                        st.switch_page("pages/05_Tribunal_Adversarios.py")
                 
                 with col_act2:
                     if st.button("💾 Save Analysis", use_container_width=True):
