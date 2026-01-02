@@ -320,4 +320,213 @@ if not st.session_state['debate_en_pausa']:
                     if resultado.get('solicitudes_modulos'):
                         st.session_state['solicitudes_pendientes'] = resultado['solicitudes_modulos']
                         st.session_state['debate_en_pausa'] = True
-                        progress_bar.progress(90
+                        progress_bar.progress(90)
+                        status_text.text("⏸️ Debate pausado - Solicitud de módulo pendiente")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        progress_bar.progress(100)
+                        status_text.text("✅ Tribunal completado")
+                    
+                    time.sleep(0.5)
+                    status_text.empty()
+                    progress_bar.empty()
+                    
+                    # Store result
+                    resultado['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    st.session_state['current_debate'] = resultado
+                    st.session_state['tribunal_history'].append(resultado)
+    
+    with col_exec2:
+        if st.button("🔄 Limpiar", use_container_width=True):
+            st.session_state['caso_actual'] = ''
+            st.session_state['current_debate'] = None
+            st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
+            st.session_state['solicitudes_pendientes'] = []
+            st.rerun()
+else:
+    st.info("⏸️ Debate en pausa. Por favor responde a las solicitudes de módulos arriba.")
+
+# Display results
+if st.session_state.get('current_debate'):
+    resultado = st.session_state['current_debate']
+    
+    st.markdown("---")
+    st.markdown("## 🎭 Debate Tripartito")
+    
+    # Display weights
+    st.markdown("""
+    <div style='text-align: center; margin: 20px 0;'>
+        <span class='peso-badge peso-noble'>Motor Noble: 30%</span>
+        <span class='peso-badge peso-adversario'>Motor Adversario: 30%</span>
+        <span class='peso-badge peso-armonia'>Corrector de Armonía: 40%</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Three motors
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="motor-card motor-noble">
+            <h3>🌟 Motor Noble</h3>
+            <p style='font-style: italic; color: #666;'>"El Idealista"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        noble = resultado.get('motor_noble', {})
+        st.write(noble.get('posicion', ''))
+        if show_reasoning and noble.get('razonamiento'):
+            with st.expander("🔍 Razonamiento"):
+                for paso in noble['razonamiento']:
+                    st.markdown(f"• {paso}")
+        st.metric("Agency Score", f"{noble.get('agency_score', 0)}/100")
+    
+    with col2:
+        st.markdown("""
+        <div class="motor-card motor-adversario">
+            <h3>⚔️ Motor Adversario</h3>
+            <p style='font-style: italic; color: #666;'>"El Escéptico"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        adv = resultado.get('motor_adversario', {})
+        st.write(adv.get('contra_argumentos', ''))
+        if adv.get('consecuencias_no_previstas'):
+            with st.expander("⚠️ Consecuencias"):
+                for c in adv['consecuencias_no_previstas']:
+                    st.markdown(f"• {c}")
+        st.metric("Riesgos", adv.get('riesgos_count', 0))
+    
+    with col3:
+        st.markdown("""
+        <div class="motor-card motor-armonia">
+            <h3>🔄 Corrector de Armonía</h3>
+            <p style='font-style: italic; color: #666;'>"El Sintetizador"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        arm = resultado.get('corrector_armonia', {})
+        st.write(arm.get('sintesis', ''))
+        if arm.get('recomendacion'):
+            st.info(arm['recomendacion'])
+        st.metric("Balance", f"{arm.get('balance_score', 0)}/100")
+    
+    # Convergence
+    st.divider()
+    st.markdown("### 📊 Métrica de Convergencia")
+    convergencia = resultado.get('convergencia', 50)
+    st.markdown(f"""
+    <div class="convergence-meter">
+        <div class="convergence-indicator" style="left: {convergencia}%;"></div>
+    </div>
+    <div style='text-align: center; margin-top: 10px;'>
+        <span style='float: left;'>◀ Divergencia</span>
+        <strong>Convergencia: {convergencia}%</strong>
+        <span style='float: right;'>Consenso ▶</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Entropía Causal
+    if enable_entropia and resultado.get('entropia_causal'):
+        st.divider()
+        entropia = resultado['entropia_causal']
+        
+        st.markdown(f"""
+        <div class="entropia-panel">
+            <h3>🔬 Módulo de Entropía Causal</h3>
+            <p style='font-style: italic;'>"La Termodinámica de la Decisión"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+        with col_e1:
+            st.metric("CR Score", f"{entropia['cr_score']}/100",
+                     help="Costo de Reconstrucción")
+        with col_e2:
+            st.metric("Futuros Colapsados", entropia['futuros_colapsados_count'])
+        with col_e3:
+            st.metric("Irreversibilidad", f"{entropia['irreversibilidad']}/10")
+        with col_e4:
+            st.metric("Clasificación", entropia['clasificacion'])
+        
+        if entropia.get('alertas'):
+            st.warning("⚠️ Alertas de Entropía:")
+            for alerta in entropia['alertas']:
+                st.markdown(f"• {alerta}")
+    
+    # Motor de Gracia
+    st.divider()
+    st.markdown("""
+    <div class="arbitro-panel">
+        <h2 style='text-align: center;'>👑 Arbitraje del Motor de Gracia</h2>
+        <p style='text-align: center; font-style: italic;'>
+        "El árbitro evalúa la calidad del debate, no vota"
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    gracia = resultado.get('motor_gracia', {})
+    
+    col_g1, col_g2, col_g3 = st.columns(3)
+    with col_g1:
+        st.metric("Grace Score", f"{gracia.get('grace_score', 0)}/100")
+    with col_g2:
+        st.metric("Certeza", f"{gracia.get('certeza', 0)}%")
+    with col_g3:
+        st.metric("Coherencia", f"{gracia.get('coherencia_logica', 0)}/10")
+    
+    st.write(gracia.get('evaluacion', ''))
+    
+    # Alarma del Sistema
+    if resultado.get('alarma'):
+        st.divider()
+        alarma = resultado['alarma']
+        nivel = alarma['nivel']
+        
+        clase_css = {
+            'PARADOJA_IRRESOLUBLE': 'alarma-negra',
+            'RIESGO_MODO_DIOS': 'alarma-roja',
+            'INCONSISTENCIA_CRITICA': 'alarma-morada',
+            'DIVERGENCIA_ALTA': 'alarma-naranja',
+            'TENSION_MODERADA': 'alarma-amarilla',
+            'GEMA_LOGICA_VALIDADA': 'alarma-verde'
+        }.get(nivel, 'alarma-amarilla')
+        
+        st.markdown(f"""
+        <div class="alarma-panel {clase_css}">
+            <h3>🚨 {nivel.replace('_', ' ')}</h3>
+            <p>{alarma['mensaje']}</p>
+            <p><strong>Acción:</strong> {alarma['accion_requerida']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Veredicto Final
+    st.markdown("---")
+    veredicto = resultado.get('veredicto_final', 'Pendiente')
+    st.markdown(f"""
+    <div class="veredicto-final">
+        <h2>⚖️ VEREDICTO FINAL</h2>
+        <h1 style='margin: 20px 0; font-size: 3em;'>{veredicto.upper()}</h1>
+        <p style='font-size: 1.2em;'>{resultado.get('justificacion_final', '')}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🔧 Detalles Técnicos"):
+        st.json(resultado)
+    
+    # Actions
+    st.divider()
+    col_a1, col_a2, col_a3 = st.columns(3)
+    with col_a1:
+        if st.button("💾 Guardar", use_container_width=True):
+            st.download_button(
+                "⬇️ Descargar",
+                data=json.dumps(resultado, indent=2, ensure_ascii=False),
+                file_name=f"tribunal_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json"
+            )
+
+st.markdown("---")
+st.caption("⚖️ Sistema de Tribunal Tripartito | Protocolo de Velo de Ignorancia | Moralogy Framework")
