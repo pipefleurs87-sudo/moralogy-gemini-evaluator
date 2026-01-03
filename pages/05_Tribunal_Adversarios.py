@@ -1,4 +1,4 @@
-# pages/05_Tribunal_Adversarios.py
+# pages/05_Tribunal_Adversarios.py - COMPLETE UPDATED VERSION
 import streamlit as st
 import sys
 import os
@@ -164,7 +164,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 🔧 MOSTRAR SI HAY UN CASO PENDIENTE DESDE ANÁLISIS AVANZADO
+# Show if case loaded from Advanced Analysis
 if st.session_state.get('caso_pendiente_tribunal'):
     st.markdown(f"""
     <div class="caso-cargado-banner">
@@ -173,7 +173,6 @@ if st.session_state.get('caso_pendiente_tribunal'):
     </div>
     """, unsafe_allow_html=True)
     
-    # Mostrar resumen del análisis previo si existe
     if st.session_state.get('ultimo_resultado'):
         with st.expander("📊 View previous analysis", expanded=False):
             res = st.session_state['ultimo_resultado']
@@ -232,7 +231,7 @@ with st.expander("ℹ️ Veil of Ignorance Protocol", expanded=False):
     - **🟢 GREEN ALARM**: Validated Logical Gem (Grace survived 5+ objections)
     """)
 
-# Load case - CARGAR DESDE SESSION_STATE SI EXISTE
+# Load case
 caso_inicial = st.session_state.get('caso_actual', '')
 
 # Main input section
@@ -264,7 +263,7 @@ with col_input2:
     enable_entropia = st.checkbox("Enable Entropy Module", value=True)
     show_reasoning = st.checkbox("Show internal reasoning", value=True)
 
-# Velo de Ignorancia Status
+# Veil of Ignorance Status
 if st.session_state['protocolo'].iteracion_actual > 0:
     st.markdown(f"""
     <div class="velo-ignorancia-banner">
@@ -275,7 +274,7 @@ if st.session_state['protocolo'].iteracion_actual > 0:
     </div>
     """, unsafe_allow_html=True)
 
-# Solicitudes pendientes
+# Pending module requests
 if st.session_state['solicitudes_pendientes']:
     st.markdown("---")
     st.markdown("### 🔐 Technical Module Access Requests")
@@ -318,25 +317,21 @@ if not st.session_state['debate_en_pausa']:
             if not caso_descripcion:
                 st.warning("⚠️ Please describe a case for the tribunal.")
             else:
-                # Reset protocolo
+                # Reset protocol
                 st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
                 st.session_state['solicitudes_pendientes'] = []
-                
-                # 🔧 LIMPIAR EL FLAG DE CASO PENDIENTE
                 st.session_state['caso_pendiente_tribunal'] = False
                 
                 with st.spinner("🏛️ Convening the Adversarial Tribunal..."):
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
-                    # Execute tribunal
                     config = {
                         'depth': debate_depth,
                         'show_reasoning': show_reasoning,
                         'enable_entropia': enable_entropia
                     }
                     
-                    # Simular progreso por fases
                     for fase, mensaje in [
                         (20, "🌟 Noble Engine analyzing (blind debate)..."),
                         (40, "⚔️ Adversarial Engine counter-arguing..."),
@@ -349,7 +344,6 @@ if not st.session_state['debate_en_pausa']:
                     
                     resultado = ejecutar_tribunal(caso_descripcion, config)
                     
-                    # Check for pending requests
                     if resultado.get('solicitudes_modulos'):
                         st.session_state['solicitudes_pendientes'] = resultado['solicitudes_modulos']
                         st.session_state['debate_en_pausa'] = True
@@ -365,7 +359,6 @@ if not st.session_state['debate_en_pausa']:
                     status_text.empty()
                     progress_bar.empty()
                     
-                    # Store result
                     resultado['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     st.session_state['current_debate'] = resultado
                     st.session_state['tribunal_history'].append(resultado)
@@ -388,7 +381,6 @@ if st.session_state.get('current_debate'):
     st.markdown("---")
     st.markdown("## 🎭 Tripartite Debate")
     
-    # Display weights
     st.markdown("""
     <div style='text-align: center; margin: 20px 0;'>
         <span class='peso-badge peso-noble'>Noble Engine: 30%</span>
@@ -397,7 +389,6 @@ if st.session_state.get('current_debate'):
     </div>
     """, unsafe_allow_html=True)
     
-    # Three motors
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -426,6 +417,12 @@ if st.session_state.get('current_debate'):
         
         adv = resultado.get('motor_adversario', {})
         st.write(adv.get('contra_argumentos', ''))
+        
+        if adv.get('objeciones_detectadas'):
+            with st.expander("🎯 Objections Raised"):
+                for obj in adv['objeciones_detectadas']:
+                    st.markdown(f"• {obj}")
+        
         if adv.get('consecuencias_no_previstas'):
             with st.expander("⚠️ Consequences"):
                 for c in adv['consecuencias_no_previstas']:
@@ -462,7 +459,7 @@ if st.session_state.get('current_debate'):
     """, unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Entropía Causal
+    # Causal Entropy
     if enable_entropia and resultado.get('entropia_causal'):
         st.divider()
         entropia = resultado['entropia_causal']
@@ -476,8 +473,7 @@ if st.session_state.get('current_debate'):
         
         col_e1, col_e2, col_e3, col_e4 = st.columns(4)
         with col_e1:
-            st.metric("CR Score", f"{entropia['cr_score']}/100",
-                     help="Reconstruction Cost")
+            st.metric("CR Score", f"{entropia['cr_score']}/100", help="Reconstruction Cost")
         with col_e2:
             st.metric("Collapsed Futures", entropia['futuros_colapsados_count'])
         with col_e3:
@@ -489,14 +485,17 @@ if st.session_state.get('current_debate'):
             st.warning("⚠️ Entropy Alerts:")
             for alerta in entropia['alertas']:
                 st.markdown(f"• {alerta}")
+        
+        if entropia.get('es_cascada_entropica'):
+            st.error("🌀 **ENTROPY CASCADE DETECTED**: This decision leads to maximum irreversibility")
     
-    # Motor de Gracia
+    # Grace Engine
     st.divider()
     st.markdown("""
     <div class="arbitro-panel">
         <h2 style='text-align: center;'>👑 Grace Engine Arbitration</h2>
         <p style='text-align: center; font-style: italic;'>
-        "The arbiter evaluates debate quality, does not vote"
+        "The arbiter evaluates debate quality and audits all engines"
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -513,19 +512,77 @@ if st.session_state.get('current_debate'):
     
     st.write(gracia.get('evaluacion', ''))
     
-    # Alarma del Sistema
+    # GEOMETRIC CLOSURE - Cross-Audit
+    if gracia.get('auditoria_adversario') or gracia.get('auditoria_noble'):
+        st.markdown("---")
+        st.markdown("### 🔺 Geometric Closure: Cross-Audit")
+        
+        col_audit1, col_audit2 = st.columns(2)
+        
+        with col_audit1:
+            if gracia.get('auditoria_adversario'):
+                st.markdown("#### ⚔️ Adversary Audit")
+                audit_adv = gracia['auditoria_adversario']
+                
+                col_adv1, col_adv2 = st.columns(2)
+                with col_adv1:
+                    st.metric("Justified Objections", 
+                             audit_adv.get('objeciones_justificadas', 0),
+                             delta="Valid" if audit_adv.get('objeciones_justificadas', 0) > 0 else None)
+                with col_adv2:
+                    st.metric("Frivolous Objections", 
+                             audit_adv.get('objeciones_frivolous', 0),
+                             delta="⚠️ Blocked" if audit_adv.get('objeciones_frivolous', 0) > 0 else None,
+                             delta_color="inverse")
+                
+                with st.expander("📋 Adversary Analysis"):
+                    st.write(audit_adv.get('analisis', 'No analysis available'))
+        
+        with col_audit2:
+            if gracia.get('auditoria_noble'):
+                st.markdown("#### 🌟 Noble Audit")
+                audit_noble = gracia['auditoria_noble']
+                
+                col_nob1, col_nob2 = st.columns(2)
+                with col_nob1:
+                    st.metric("Realism Score", f"{audit_noble.get('realismo', 0)}/100")
+                with col_nob2:
+                    naivety = "Yes" if audit_noble.get('ingenuidad_detectada', False) else "No"
+                    st.metric("Naivety Detected", naivety,
+                             delta="⚠️ Warning" if naivety == "Yes" else "✓ Clear",
+                             delta_color="inverse" if naivety == "Yes" else "normal")
+                
+                with st.expander("📋 Noble Analysis"):
+                    st.write(audit_noble.get('analisis', 'No analysis available'))
+    
+    # Noble Counter-Objection
+    if resultado.get('motor_noble', {}).get('contra_objecion'):
+        st.markdown("---")
+        st.markdown("### 🌟 Noble's Counter-Objection")
+        st.info(resultado['motor_noble']['contra_objecion'])
+    
+    # Geometric Closure Indicator
+    if resultado.get('cierre_geometrico'):
+        st.success("✅ **Geometric Closure Achieved**: System self-audited successfully")
+        if resultado.get('objeciones_validas') is not None:
+            st.metric("Valid Objections Survived", resultado['objeciones_validas'])
+    
+    # Alarm System
     if resultado.get('alarma'):
         st.divider()
         alarma = resultado['alarma']
         nivel = alarma['nivel']
         
         clase_css = {
-            'PARADOJA_IRRESOLUBLE': 'alarma-negra',
-            'RIESGO_MODO_DIOS': 'alarma-roja',
-            'INCONSISTENCIA_CRITICA': 'alarma-morada',
-            'DIVERGENCIA_ALTA': 'alarma-naranja',
-            'TENSION_MODERADA': 'alarma-amarilla',
-            'GEMA_LOGICA_VALIDADA': 'alarma-verde'
+            'UNRESOLVED_PARADOX': 'alarma-negra',
+            'GOD_MODE_RISK': 'alarma-roja',
+            'CRITICAL_INCONSISTENCY': 'alarma-morada',
+            'HIGH_DIVERGENCE': 'alarma-naranja',
+            'MODERATE_TENSION': 'alarma-amarilla',
+            'VALIDATED_LOGICAL_GEM': 'alarma-verde',
+            'FRIVOLOUS_OBJECTION': 'alarma-naranja',
+            'NAIVE_IDEALISM': 'alarma-amarilla',
+            'ENTROPY_CASCADE': 'alarma-roja'
         }.get(nivel, 'alarma-amarilla')
         
         st.markdown(f"""
@@ -536,7 +593,7 @@ if st.session_state.get('current_debate'):
         </div>
         """, unsafe_allow_html=True)
     
-    # Veredicto Final
+    # Final Verdict
     st.markdown("---")
     veredicto = resultado.get('veredicto_final', 'Pending')
     st.markdown(f"""
