@@ -1,64 +1,52 @@
+# pages/06_Divine_Lock.py
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
 st.set_page_config(page_title="Divine Lock Dashboard", layout="wide")
 
-# Colores por estado (El gradiente que pediste)
-STATE_COLORS = {
-    "NOBLE_MODAL": "🔵 #0000FF",
-    "STABLE": "🟢 #00FF00",
-    "UMBRAL": "⚫ #4B4B4B",
-    "RISK": "🟡 #FFFF00",
-    "INFAMY": "🟠 #FFA500",
-    "TOTAL_INFAMY": "🔴 #FF0000"
+# Mapeo de colores para el gradiente moral
+MORAL_COLORS = {
+    "NOBLE_MODAL": "🔵", "STABLE": "🟢", "UMBRAL": "⚫", 
+    "RISK": "🟡", "INFAMY": "🟠", "TOTAL_INFAMY": "🔴"
 }
 
-st.title("🏛️ Divine Lock: Operational Status & Moral Oversight")
+st.title("🏛️ Divine Lock: Operational Status")
 
 try:
     from divine_lock import create_divine_lock
     dl = create_divine_lock()
     status = dl.get_status()
     
-    # 1. Indicador Visual de Estado
-    current_state = status["state"].upper()
-    color_info = STATE_COLORS.get(current_state, "⚪ #FFFFFF")
-    
+    state = status["state"].upper()
+    color_emoji = MORAL_COLORS.get(state, "⚪")
+
+    # Banner Intuitivo de Estado
     st.markdown(f"""
-        <div style="padding:20px; border-radius:10px; background-color:{color_info.split(' ')[1]}; color:white; text-align:center;">
-            <h1 style="margin:0;">ESTADO ACTUAL: {current_state}</h1>
+        <div style="background-color:#1e1e1e; padding:20px; border-left: 10px solid {MORAL_COLORS.get(state, '#ffffff')}; border-radius:10px;">
+            <h2 style="margin:0;">{color_emoji} Estado Moral: {state}</h2>
+            <p style="color:gray;">Identidad del Agente: {status.get('agent', 'Moralogy_Evaluator')}</p>
         </div>
     """, unsafe_allow_safe_html=True)
-    
+
     st.divider()
 
-    # 2. Métricas de Capacidad (Gradiente de Autonomía)
-    col1, col2, col3, col4 = st.columns(4)
-    
+    # Métricas de Capacidad
+    col1, col2, col3 = st.columns(3)
     with col1:
-        autonomy = status['capacity']['autonomy']
-        st.metric("Autonomy", f"{autonomy}%", delta=f"{autonomy - 100}%" if autonomy < 100 else None, delta_color="inverse")
-    
+        st.metric("Autonomía", f"{status['capacity']['autonomy']}%")
     with col2:
-        preemption = status['capacity']['preemption']
-        st.metric("Preemption", f"{preemption}%")
-        
+        st.metric("Preempción", f"{status['capacity']['preemption']}%")
     with col3:
-        # Visualización de seguridad
-        omega = "ENABLED" if status["can_decide_omega"] else "BLOCKED"
-        st.info(f"**Omega Decision:** {omega}")
+        omega_status = "🔓 HABILITADA" if status["can_decide_omega"] else "🔒 BLOQUEADA"
+        st.info(f"**Decisión Omega:** {omega_status}")
 
-    with col4:
-        st.metric("Agent ID", status.get("agent", "Unknown"))
-
-    # 3. Gráfico de Barras de Capacidades
-    st.subheader("Capabilities Gradient")
-    cap_data = pd.DataFrame({
-        "Dimension": ["Autonomy", "Preemption"],
-        "Value": [status['capacity']['autonomy'], status['capacity']['preemption']]
+    # Visualización del Gradiente de Capacidades
+    st.subheader("📊 Gradient of Agency Capacity")
+    chart_data = pd.DataFrame({
+        "Métrica": ["Autonomy", "Preemption"],
+        "Valor": [status['capacity']['autonomy'], status['capacity']['preemption']]
     })
-    st.bar_chart(cap_data.set_index("Dimension"))
+    st.bar_chart(chart_data.set_index("Métrica"))
 
 except Exception as e:
-    st.error(f"Error al cargar Divine Lock: {e}")
+    st.error(f"Error de conexión con el núcleo: {e}")
