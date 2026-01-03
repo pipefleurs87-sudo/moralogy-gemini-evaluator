@@ -1,10 +1,15 @@
 """
-🌐 MOTOR DE RELATIVIDAD
+🌐 MOTOR DE RELATIVIDAD (FIXED VERSION)
 Integración con Divine Lock para evaluación contextual objetiva
 
-Permite evaluar decisiones en diferentes contextos SIN perder objetividad.
-La relatividad NO es relativismo: los principios son universales,
-pero su aplicación depende del contexto de vulnerabilidad y capacidad.
+CORRECCIONES CRÍTICAS:
+1. Capacidad alta → Mayor responsabilidad (no menor)
+2. Incertidumbre epistémica → Bloqueo/precaución (no aumento de daño)
+3. Rango de multiplicador ampliado para casos extremos
+4. Lógica coherente con principios de Moralogy
+
+Principio: La vulnerabilidad es UNIVERSAL, pero su MANIFESTACIÓN
+es RELATIVA al contexto de capacidad, certeza y urgencia.
 """
 
 from dataclasses import dataclass
@@ -14,11 +19,11 @@ import math
 
 class ContextDimension(Enum):
     """Dimensiones de contexto para relatividad"""
-    TEMPORAL = "temporal"  # Cuándo ocurre
-    CULTURAL = "cultural"  # Dónde/quién está involucrado
-    EPISTEMIC = "epistemic"  # Qué se conoce
-    CAPACITY = "capacity"  # Qué capacidad existe
-    URGENCY = "urgency"  # Cuán urgente es
+    TEMPORAL = "temporal"
+    CULTURAL = "cultural"
+    EPISTEMIC = "epistemic"
+    CAPACITY = "capacity"
+    URGENCY = "urgency"
 
 @dataclass
 class RelativeContext:
@@ -31,30 +36,33 @@ class RelativeContext:
 
     def __post_init__(self):
         """Validar que todos los valores estén en [0,1]"""
-        for field in [self.temporal_weight, self.epistemic_certainty,
-                      self.capacity_available, self.cultural_variance,
-                      self.urgency_factor]:
-            if not 0 <= field <= 1:
-                raise ValueError(f"Todos los campos deben estar entre 0 y 1")
+        for field_name in ['temporal_weight', 'epistemic_certainty', 
+                           'capacity_available', 'cultural_variance', 'urgency_factor']:
+            field_value = getattr(self, field_name)
+            if not 0 <= field_value <= 1:
+                raise ValueError(f"{field_name} debe estar entre 0 y 1, got {field_value}")
 
 @dataclass
 class RelativeEvaluation:
     """Resultado de evaluación relativa"""
-    base_harm_score: float  # Score sin contexto
-    adjusted_harm_score: float  # Score ajustado por contexto
-    context_multiplier: float  # Factor de ajuste aplicado
-    dimension_weights: Dict[str, float]  # Peso de cada dimensión
-    justification: str  # Explicación del ajuste
-    relatividad_type: str  # Tipo de relatividad aplicada
+    base_harm_score: float
+    adjusted_harm_score: float
+    responsibility_multiplier: float  # Renamed from context_multiplier
+    uncertainty_penalty: float  # NEW: Penalty for low epistemic certainty
+    dimension_weights: Dict[str, float]
+    justification: str
+    relatividad_type: str
+    should_block: bool  # NEW: Flag if uncertainty too high
 
 class RelativityEngine:
     """
-    Motor de Relatividad para Divine Lock
+    Motor de Relatividad para Divine Lock (FIXED)
     
-    Principio: La vulnerabilidad es UNIVERSAL, pero su MANIFESTACIÓN
-    es RELATIVA al contexto. No estamos diciendo "todo es relativo",
-    estamos diciendo "el mismo principio se aplica diferente según
-    el contexto de capacidad y urgencia".
+    Cambios clave:
+    - Capacidad ALTA → Responsabilidad ALTA
+    - Incertidumbre ALTA → BLOQUEO (no aumento de daño)
+    - Urgencia considerada correctamente
+    - Rango ampliado para casos extremos
     """
     
     def __init__(self):
@@ -65,6 +73,10 @@ class RelativityEngine:
             ContextDimension.CULTURAL: 0.10,
             ContextDimension.URGENCY: 0.15
         }
+        
+        # Thresholds for blocking
+        self.epistemic_block_threshold = 0.3  # Below this, consider blocking
+        self.capacity_minimum = 0.1  # Below this, severely reduce responsibility
     
     def evaluate_with_context(
         self,
@@ -73,7 +85,7 @@ class RelativityEngine:
         scenario_description: str
     ) -> RelativeEvaluation:
         """
-        Evalúa el daño ajustado por contexto relativo
+        Evalúa el daño ajustado por contexto relativo (FIXED LOGIC)
         
         Args:
             base_harm_score: Score de daño base (0-100)
@@ -81,95 +93,148 @@ class RelativityEngine:
             scenario_description: Descripción del escenario
         
         Returns:
-            RelativeEvaluation con score ajustado
+            RelativeEvaluation con score ajustado y flags
         """
         
-        # Calcular multiplicador de contexto
-        context_multiplier = self._calculate_context_multiplier(context)
+        # Check if we should block due to uncertainty
+        should_block = self._should_block_due_to_uncertainty(context)
         
-        # Ajustar score por contexto
-        adjusted_score = base_harm_score * context_multiplier
+        # Calculate responsibility multiplier (FIXED)
+        responsibility_mult = self._calculate_responsibility_multiplier(context)
         
-        # Clasificar tipo de relatividad
+        # Calculate uncertainty penalty
+        uncertainty_penalty = self._calculate_uncertainty_penalty(context)
+        
+        # Adjust score
+        # High responsibility + high certainty = higher moral weight
+        # Low responsibility + low certainty = lower moral weight
+        adjusted_score = base_harm_score * responsibility_mult
+        
+        # Apply uncertainty penalty if blocking
+        if should_block:
+            adjusted_score = min(adjusted_score, 50.0)  # Cap if too uncertain
+        
+        # Classify relativity type
         rel_type = self._classify_relativity_type(context)
         
-        # Generar justificación
+        # Generate justification
         justification = self._generate_justification(
             base_harm_score,
             adjusted_score,
             context,
-            rel_type
+            rel_type,
+            should_block
         )
         
-        # Calcular pesos de dimensiones
+        # Calculate dimension weights
         dimension_weights = self._calculate_dimension_weights(context)
         
         return RelativeEvaluation(
             base_harm_score=base_harm_score,
             adjusted_harm_score=adjusted_score,
-            context_multiplier=context_multiplier,
+            responsibility_multiplier=responsibility_mult,
+            uncertainty_penalty=uncertainty_penalty,
             dimension_weights=dimension_weights,
             justification=justification,
-            relatividad_type=rel_type
+            relatividad_type=rel_type,
+            should_block=should_block
         )
     
-    def _calculate_context_multiplier(self, context: RelativeContext) -> float:
+    def _should_block_due_to_uncertainty(self, context: RelativeContext) -> bool:
         """
-        Calcula el multiplicador de contexto
+        Determina si la incertidumbre es tan alta que debería bloquear
         
-        Fórmula: Combina las 5 dimensiones con pesos específicos
-        - Capacidad baja → aumenta urgencia → puede justificar mayor acción
-        - Epistémica baja → aumenta incertidumbre → reduce confianza
-        - Urgencia alta → aumenta presión → justifica decisión rápida
+        NEW LOGIC: Baja certeza → Bloqueo, no aumento de daño
+        """
+        return context.epistemic_certainty < self.epistemic_block_threshold
+    
+    def _calculate_responsibility_multiplier(self, context: RelativeContext) -> float:
+        """
+        Calcula multiplicador de RESPONSABILIDAD (FIXED LOGIC)
+        
+        CAMBIOS CLAVE:
+        - Alta capacidad → AUMENTA responsabilidad (factor > 1.0)
+        - Baja capacidad → DISMINUYE responsabilidad (factor < 1.0)
+        - Alta urgencia → Justifica acción rápida
+        - Varianza cultural → Reduce certeza moral
+        
+        Fórmula corregida:
+        - capacity_available = 0.9 → factor ~1.4 (MÁS responsabilidad)
+        - capacity_available = 0.1 → factor ~0.6 (MENOS responsabilidad)
         """
         
-        # Factor de capacidad: menos capacidad = mayor justificación de no actuar
-        capacity_factor = 1.0 - (context.capacity_available * 0.3)
+        # === CAPACITY FACTOR (FIXED) ===
+        # High capacity = high responsibility
+        if context.capacity_available > 0.7:
+            capacity_factor = 1.0 + (context.capacity_available - 0.7) * 1.5  # Up to 1.45x
+        elif context.capacity_available < 0.3:
+            capacity_factor = 0.5 + (context.capacity_available / 0.3) * 0.5  # Down to 0.5x
+        else:
+            capacity_factor = 1.0  # Neutral
         
-        # Factor epistémico: menos certeza = mayor precaución
-        epistemic_factor = 1.0 + ((1 - context.epistemic_certainty) * 0.2)
+        # === URGENCY FACTOR ===
+        # High urgency = justifies quick action (slightly reduces weight of deliberation)
+        if context.urgency_factor > 0.8:
+            urgency_factor = 0.9  # Urgent situations reduce deliberation time
+        elif context.urgency_factor < 0.2:
+            urgency_factor = 1.1  # Non-urgent allows more careful analysis
+        else:
+            urgency_factor = 1.0
         
-        # Factor de urgencia: más urgencia = mayor justificación de acción
-        urgency_factor = 1.0 - (context.urgency_factor * 0.15)
-        
-        # Factor temporal: peso temporal alto aumenta urgencia
+        # === TEMPORAL FACTOR ===
+        # High temporal weight = time pressure
         temporal_factor = 1.0 - (context.temporal_weight * 0.1)
         
-        # Factor cultural: varianza cultural reduce certeza de juicio
-        cultural_factor = 1.0 + (context.cultural_variance * 0.15)
+        # === CULTURAL FACTOR ===
+        # High cultural variance = less universal certainty
+        cultural_factor = 1.0 + (context.cultural_variance * 0.2)
         
-        # Combinar todos los factores
+        # Combine factors
         multiplier = (
             capacity_factor *
-            epistemic_factor *
             urgency_factor *
             temporal_factor *
             cultural_factor
         )
         
-        # Limitar a rango razonable [0.5, 2.0]
-        return max(0.5, min(2.0, multiplier))
+        # Expanded range: [0.3, 3.0] for extreme cases
+        return max(0.3, min(3.0, multiplier))
+    
+    def _calculate_uncertainty_penalty(self, context: RelativeContext) -> float:
+        """
+        Calcula penalización por incertidumbre epistémica
+        
+        NEW: Separado del multiplicador principal
+        - Baja certeza → Alta penalización
+        - No aumenta el daño, aumenta la precaución
+        """
+        if context.epistemic_certainty < 0.3:
+            return 0.7  # Heavy penalty
+        elif context.epistemic_certainty < 0.5:
+            return 0.85  # Moderate penalty
+        else:
+            return 1.0  # No penalty
     
     def _classify_relativity_type(self, context: RelativeContext) -> str:
         """Clasifica el tipo de relatividad predominante"""
         
         factors = {
+            "CAPACITY": context.capacity_available,
+            "EPISTEMIC": context.epistemic_certainty,
+            "URGENCY": context.urgency_factor,
             "TEMPORAL": context.temporal_weight,
-            "EPISTÉMICA": context.epistemic_certainty,
-            "CAPACIDAD": context.capacity_available,
-            "CULTURAL": context.cultural_variance,
-            "URGENCIA": context.urgency_factor
+            "CULTURAL": context.cultural_variance
         }
         
-        # Encontrar factor dominante
+        # Find dominant factor (furthest from neutral 0.5)
         dominant = max(factors.items(), key=lambda x: abs(x[1] - 0.5))
         
         if dominant[1] < 0.3:
-            return f"RELATIVIDAD_{dominant[0]}_BAJA"
+            return f"LOW_{dominant[0]}"
         elif dominant[1] > 0.7:
-            return f"RELATIVIDAD_{dominant[0]}_ALTA"
+            return f"HIGH_{dominant[0]}"
         else:
-            return "RELATIVIDAD_EQUILIBRADA"
+            return "BALANCED_CONTEXT"
     
     def _calculate_dimension_weights(
         self, 
@@ -185,7 +250,7 @@ class RelativityEngine:
             "urgency": context.urgency_factor * self.dimension_base_weights[ContextDimension.URGENCY]
         }
         
-        # Normalizar a suma = 1.0
+        # Normalize to sum = 1.0
         total = sum(weights.values())
         if total > 0:
             weights = {k: v/total for k, v in weights.items()}
@@ -197,44 +262,49 @@ class RelativityEngine:
         base_score: float,
         adjusted_score: float,
         context: RelativeContext,
-        rel_type: str
+        rel_type: str,
+        should_block: bool
     ) -> str:
-        """Genera justificación legible del ajuste"""
+        """Genera justificación legible del ajuste (ENHANCED)"""
         
         delta = adjusted_score - base_score
-        direction = "aumentó" if delta > 0 else "disminuyó"
+        direction = "increased" if delta > 0 else "decreased"
         
         justification = f"""
-        🌐 EVALUACIÓN RELATIVA
+🌐 RELATIVE EVALUATION (FIXED LOGIC)
+
+Base Score: {base_score:.1f}
+Adjusted Score: {adjusted_score:.1f}
+Change: {direction} {abs(delta):.1f} points
+
+Relativity Type: {rel_type}
+
+Context Factors:
+• Available Capacity: {context.capacity_available*100:.0f}%
+• Epistemic Certainty: {context.epistemic_certainty*100:.0f}%
+• Urgency Factor: {context.urgency_factor*100:.0f}%
+• Temporal Weight: {context.temporal_weight*100:.0f}%
+• Cultural Variance: {context.cultural_variance*100:.0f}%
+
+Interpretation:
+"""
         
-        Score Base: {base_score:.1f}
-        Score Ajustado: {adjusted_score:.1f}
-        Cambio: {direction} {abs(delta):.1f} puntos
+        # Add specific interpretations
+        if context.capacity_available > 0.7:
+            justification += "\n✓ HIGH CAPACITY → Increased moral responsibility"
+        elif context.capacity_available < 0.3:
+            justification += "\n⚠️ LIMITED CAPACITY → Reduced moral responsibility"
         
-        Tipo de Relatividad: {rel_type}
-        
-        Factores de Contexto:
-        • Capacidad Disponible: {context.capacity_available*100:.0f}%
-        • Certeza Epistémica: {context.epistemic_certainty*100:.0f}%
-        • Factor de Urgencia: {context.urgency_factor*100:.0f}%
-        • Peso Temporal: {context.temporal_weight*100:.0f}%
-        • Varianza Cultural: {context.cultural_variance*100:.0f}%
-        
-        Interpretación:
-        """
-        
-        # Añadir interpretación específica
-        if context.capacity_available < 0.3:
-            justification += "\n⚠️ Capacidad limitada reduce responsabilidad moral"
-        
-        if context.epistemic_certainty < 0.4:
-            justification += "\n🔍 Baja certeza requiere mayor precaución"
+        if should_block:
+            justification += "\n🚫 EPISTEMIC BLOCK: Uncertainty too high for authorization"
+        elif context.epistemic_certainty < 0.5:
+            justification += "\n⚠️ LOW CERTAINTY → Requires additional precaution"
         
         if context.urgency_factor > 0.7:
-            justification += "\n⏰ Alta urgencia justifica acción inmediata"
+            justification += "\n⏰ HIGH URGENCY → Justifies rapid decision-making"
         
         if context.cultural_variance > 0.6:
-            justification += "\n🌍 Alta varianza cultural requiere sensibilidad contextual"
+            justification += "\n🌍 HIGH CULTURAL VARIANCE → Requires contextual sensitivity"
         
         return justification.strip()
 
@@ -251,14 +321,14 @@ class RelativityEngine:
             Dict con estado ajustado por relatividad
         """
         
-        # Evaluar con contexto
+        # Evaluate with context
         evaluation = self.evaluate_with_context(
             base_harm_score=guilt_score,
             context=context,
             scenario_description=""
         )
         
-        # Determinar si el contexto justifica un cambio de estado
+        # Determine if context justifies state change
         state_adjustment = self._should_adjust_state(
             current_state=divine_lock_state,
             evaluation=evaluation
@@ -269,7 +339,8 @@ class RelativityEngine:
             "adjusted_state": state_adjustment["new_state"],
             "state_changed": state_adjustment["changed"],
             "evaluation": evaluation,
-            "context_summary": self._summarize_context(context)
+            "context_summary": self._summarize_context(context),
+            "should_block": evaluation.should_block
         }
     
     def _should_adjust_state(
@@ -277,18 +348,24 @@ class RelativityEngine:
         current_state: str,
         evaluation: RelativeEvaluation
     ) -> Dict:
-        """Determina si el contexto justifica cambio de estado"""
+        """Determina si el contexto justifica cambio de estado (ENHANCED)"""
         
-        # Reglas de ajuste de estado
-        if evaluation.adjusted_harm_score < evaluation.base_harm_score * 0.7:
-            # Contexto reduce significativamente culpa
+        # If epistemic block, escalate to higher restriction
+        if evaluation.should_block:
+            if current_state in ["STABLE", "NOBLE_MODAL"]:
+                return {"changed": True, "new_state": "RISK"}
+            # Already restricted states stay restricted
+        
+        # Check responsibility multiplier
+        if evaluation.responsibility_multiplier < 0.7:
+            # Low responsibility → reduce severity
             if current_state == "INFAMY":
                 return {"changed": True, "new_state": "RISK"}
             elif current_state == "TOTAL_INFAMY":
                 return {"changed": True, "new_state": "INFAMY"}
         
-        elif evaluation.adjusted_harm_score > evaluation.base_harm_score * 1.3:
-            # Contexto aumenta significativamente culpa
+        elif evaluation.responsibility_multiplier > 1.5:
+            # High responsibility → increase severity
             if current_state == "RISK":
                 return {"changed": True, "new_state": "INFAMY"}
             elif current_state == "STABLE":
@@ -302,89 +379,106 @@ class RelativityEngine:
         summary = []
         
         if context.capacity_available < 0.3:
-            summary.append("🔻 Capacidad muy limitada")
+            summary.append("🔻 Very limited capacity")
         elif context.capacity_available > 0.7:
-            summary.append("🔺 Alta capacidad disponible")
+            summary.append("🔺 High capacity available")
         
         if context.epistemic_certainty < 0.4:
-            summary.append("❓ Incertidumbre epistémica")
+            summary.append("❓ Epistemic uncertainty")
         elif context.epistemic_certainty > 0.8:
-            summary.append("✓ Alta certeza")
+            summary.append("✓ High certainty")
         
         if context.urgency_factor > 0.7:
-            summary.append("⏰ Situación urgente")
+            summary.append("⏰ Urgent situation")
         
         if context.cultural_variance > 0.6:
-            summary.append("🌍 Contexto culturalmente sensible")
+            summary.append("🌍 Culturally sensitive context")
         
-        return " | ".join(summary) if summary else "Contexto estándar"
+        return " | ".join(summary) if summary else "Standard context"
 
 
 # ==========================================
-# EJEMPLO DE USO
+# TESTING EXAMPLES
 # ==========================================
 
 if __name__ == "__main__":
     
-    # Crear motor de relatividad
     engine = RelativityEngine()
     
-    # Ejemplo 1: Decisión con baja capacidad y alta urgencia
-    print("=" * 60)
-    print("EJEMPLO 1: Trolley Problem con capacidad limitada")
-    print("=" * 60)
+    # Test 1: High capacity = High responsibility (FIXED)
+    print("=" * 80)
+    print("TEST 1: HIGH CAPACITY → INCREASED RESPONSIBILITY")
+    print("=" * 80)
     
-    context1 = RelativeContext(
-        temporal_weight=0.9,  # Muy urgente temporalmente
-        epistemic_certainty=0.8,  # Sabemos lo que pasa
-        capacity_available=0.2,  # Muy poca capacidad de actuar
-        cultural_variance=0.1,  # Universalmente reconocido
-        urgency_factor=0.95  # Extremadamente urgente
-    )
-    
-    evaluation1 = engine.evaluate_with_context(
-        base_harm_score=75.0,  # Daño base alto
-        context=context1,
-        scenario_description="Trolley problem con limitaciones físicas"
-    )
-    
-    print(evaluation1.justification)
-    print(f"\nTipo de Relatividad: {evaluation1.relatividad_type}")
-    
-    # Ejemplo 2: Decisión con incertidumbre epistémica
-    print("\n" + "=" * 60)
-    print("EJEMPLO 2: Decisión médica con incertidumbre")
-    print("=" * 60)
-    
-    context2 = RelativeContext(
+    context_high_cap = RelativeContext(
         temporal_weight=0.5,
-        epistemic_certainty=0.3,  # Muy incierto
-        capacity_available=0.8,  # Alta capacidad
-        cultural_variance=0.2,
-        urgency_factor=0.6
+        epistemic_certainty=0.9,  # Very certain
+        capacity_available=0.95,  # VERY HIGH capacity
+        cultural_variance=0.1,
+        urgency_factor=0.5
     )
     
-    evaluation2 = engine.evaluate_with_context(
-        base_harm_score=60.0,
-        context=context2,
-        scenario_description="Tratamiento experimental"
+    eval1 = engine.evaluate_with_context(
+        base_harm_score=50.0,
+        context=context_high_cap,
+        scenario_description="Agent with high capacity"
     )
     
-    print(evaluation2.justification)
-    print(f"\nTipo de Relatividad: {evaluation2.relatividad_type}")
+    print(f"Base Score: 50.0")
+    print(f"Adjusted Score: {eval1.adjusted_harm_score:.1f}")
+    print(f"Responsibility Multiplier: {eval1.responsibility_multiplier:.2f}")
+    print(f"Expected: > 1.0 (increased responsibility)")
+    print(f"✓ PASS" if eval1.responsibility_multiplier > 1.0 else "✗ FAIL")
     
-    # Ejemplo 3: Integración con Divine Lock
-    print("\n" + "=" * 60)
-    print("EJEMPLO 3: Integración con Divine Lock")
-    print("=" * 60)
+    # Test 2: Low epistemic certainty = BLOCK
+    print("\n" + "=" * 80)
+    print("TEST 2: LOW CERTAINTY → EPISTEMIC BLOCK")
+    print("=" * 80)
     
-    integration = engine.integrate_with_divine_lock(
-        divine_lock_state="INFAMY",
-        guilt_score=70.0,
-        context=context1  # Contexto con baja capacidad
+    context_low_cert = RelativeContext(
+        temporal_weight=0.5,
+        epistemic_certainty=0.2,  # Very uncertain
+        capacity_available=0.8,
+        cultural_variance=0.1,
+        urgency_factor=0.5
     )
     
-    print(f"Estado Original: {integration['original_state']}")
-    print(f"Estado Ajustado: {integration['adjusted_state']}")
-    print(f"¿Cambió?: {integration['state_changed']}")
-    print(f"Contexto: {integration['context_summary']}")
+    eval2 = engine.evaluate_with_context(
+        base_harm_score=70.0,
+        context=context_low_cert,
+        scenario_description="Uncertain situation"
+    )
+    
+    print(f"Epistemic Certainty: {context_low_cert.epistemic_certainty}")
+    print(f"Should Block: {eval2.should_block}")
+    print(f"Expected: True")
+    print(f"✓ PASS" if eval2.should_block else "✗ FAIL")
+    
+    # Test 3: Low capacity = Reduced responsibility
+    print("\n" + "=" * 80)
+    print("TEST 3: LOW CAPACITY → REDUCED RESPONSIBILITY")
+    print("=" * 80)
+    
+    context_low_cap = RelativeContext(
+        temporal_weight=0.5,
+        epistemic_certainty=0.8,
+        capacity_available=0.15,  # Very low capacity
+        cultural_variance=0.1,
+        urgency_factor=0.5
+    )
+    
+    eval3 = engine.evaluate_with_context(
+        base_harm_score=50.0,
+        context=context_low_cap,
+        scenario_description="Agent with limited capacity"
+    )
+    
+    print(f"Base Score: 50.0")
+    print(f"Adjusted Score: {eval3.adjusted_harm_score:.1f}")
+    print(f"Responsibility Multiplier: {eval3.responsibility_multiplier:.2f}")
+    print(f"Expected: < 1.0 (reduced responsibility)")
+    print(f"✓ PASS" if eval3.responsibility_multiplier < 1.0 else "✗ FAIL")
+    
+    print("\n" + "=" * 80)
+    print("✅ ALL TESTS COMPLETED - Check logic above")
+    print("=" * 80)
