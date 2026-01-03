@@ -1,224 +1,119 @@
+"""
+Moralogy Gemini Evaluator - Principal Application
+Main entry point for Streamlit multi-page application
+"""
+
 import streamlit as st
-import json
-import os
-import sys
+from pathlib import Path
 
-# Agregar directorio actual al path
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-
-# ==================== IMPORTAR DIVINE LOCK ====================
-try:
-    from divine_lock import create_divine_lock
-    divine_lock = create_divine_lock()
-    DIVINE_LOCK_ACTIVE = True
-except ImportError:
-    DIVINE_LOCK_ACTIVE = False
-    st.sidebar.warning("⚠️ Divine Lock no disponible")
-
-# ==================== IMPORTAR MORALOGY ====================
-from motor_logico import model, ge, get_emergent_philosophy_stats
-
-# ==================== CONFIGURAR PÁGINA ====================
-st.set_page_config(page_title="Moralogy Engine", layout="wide", page_icon="🏛️")
-
-# ==================== SIDEBAR CON DIVINE LOCK ====================
-with st.sidebar:
-    st.markdown("### 🏛️ Moralogy Engine")
-    
-    # Mostrar estado Divine Lock
-    if DIVINE_LOCK_ACTIVE:
-        status = divine_lock.get_status()
-        
-        # Estado moral con color
-        state = status["state"].upper()
-        state_emoji = {
-            "TOTAL_INFAMY": "🔴",
-            "INFAMY": "🟠", 
-            "RISK": "🟡",
-            "UMBRAL": "⚫",
-            "STABLE": "🟢",
-            "NOBLE_MODAL": "🔵"
-        }.get(state, "⚪")
-        
-        st.markdown(f"### {state_emoji} Divine Lock")
-        st.metric("Estado Moral", state)
-        
-        # Capacidad
-        cap = status["capacity"]
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Autonomía", f"{cap['autonomy']:.0f}%")
-        with col2:
-            st.metric("Preemptión", f"{cap['preemption']:.0f}%")
-        
-        if not status["can_decide_omega"]:
-            st.warning("🚫 Bloqueado para decisiones Omega")
-    
-    # Idioma
-    idioma = st.selectbox("Language / Idioma", ["English", "Español"])
-    
-    st.markdown("---")
-    st.markdown("### About Moralogy")
-    st.markdown("""
-    **Framework Foundation:**
-    - Agency requires vulnerability
-    - Vulnerability grounds moral relevance
-    - Harm = agency degradation
-    - Actions justified by consent OR preventing greater harm
-    """)
-    
-    # Estadísticas
-    try:
-        stats = get_emergent_philosophy_stats()
-        if stats['total_events'] > 0:
-            st.metric("Emergent Philosophy Events", stats['total_events'])
-    except:
-        pass
-
-# ==================== INTERFAZ PRINCIPAL ====================
-txt = {
-    "English": {
-        "title": "🏛️ Moralogy Engine",
-        "subtitle": "Formal Vulnerability-Based Ethics System + Divine Lock",
-        "box": "Describe the ethical dilemma:",
-        "btn": "Analyze Through Framework",
-        "placeholder": "Example: 'Is it ethical to sacrifice one person to save five?'"
-    },
-    "Español": {
-        "title": "🏛️ Motor de Moralogía",
-        "subtitle": "Sistema Ético Formal Basado en Vulnerabilidad + Bloqueo Divino",
-        "box": "Describe el dilema ético:",
-        "btn": "Analizar con Framework", 
-        "placeholder": "Ejemplo: '¿Es ético sacrificar a una persona para salvar a cinco?'"
-    }
-}[idioma]
-
-st.title(txt["title"])
-st.caption(txt["subtitle"])
-
-# Input principal
-caso = st.text_area(
-    txt["box"],
-    height=200,
-    placeholder=txt["placeholder"]
+# Configure Streamlit page
+st.set_page_config(
+    page_title="Moralogy Gemini Evaluator",
+    page_icon="🧭",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Botón de análisis
-if st.button(txt["btn"], type="primary"):
-    if not caso:
-        st.warning("⚠️ Please enter a scenario to analyze.")
-    else:
-        with st.spinner("🧠 Processing through Moralogy Framework..."):
-            
-            # ==================== VERIFICAR CON DIVINE LOCK ====================
-            if DIVINE_LOCK_ACTIVE:
-                divine_result = divine_lock.process_decision(caso)
-                
-                # Si está bloqueado por Divine Lock
-                if divine_result.get("decision") == "BLOCKED_BY_DIVINE_LOCK":
-                    st.error("🚫 BLOQUEADO POR DIVINE LOCK")
-                    st.warning("Esta decisión excede la capacidad operacional actual")
-                    
-                    with st.expander("Detalles del bloqueo"):
-                        st.json(divine_result)
-                    
-                    # Preguntar si continuar en modo limitado
-                    if not st.checkbox("Continuar en modo limitado (sin preemptión)"):
-                        st.stop()
-                
-                # Si es rechazo Omega
-                elif divine_result.get("decision") == "OMEGA_REFUSAL_PROCESSED":
-                    st.warning("🔒 DECISIÓN OMEGA RECHAZADA")
-                    st.info("Se ha activado el Bloqueo Divino: Capacidad reducida, juicio externalizado")
-                    
-                    with st.expander("Ver transición de estado"):
-                        st.json(divine_result)
-            
-            # ==================== PROCESAR CON MORALOGY ====================
-            try:
-                response = model.generate_content(caso)
-                
-                # Parsear respuesta
-                raw_text = response.text.strip()
-                if "```json" in raw_text:
-                    raw_text = raw_text.split("```json")[1].split("```")[0].strip()
-                elif "```" in raw_text:
-                    raw_text = raw_text.split("```")[1].split("```")[0].strip()
-                
-                data = json.loads(raw_text)
-                
-                # Calcular gradiente
-                gradiente = ge.get_gradient(
-                    data.get('agency_score', 0),
-                    data.get('grace_score', 0), 
-                    data.get('adversarial_risk', 0)
-                )
-                
-                # Mostrar resultados
-                st.divider()
-                
-                # Métricas principales
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Category", data.get('category_deduced', 'Unknown'))
-                with col2:
-                    st.metric("Verdict", data.get('verdict', 'Unknown'))
-                with col3:
-                    risk = data.get('adversarial_risk', 0)
-                    st.metric("Adversarial Risk", f"{risk}%")
-                
-                # Gradiente
-                st.markdown(f"## {gradiente}")
-                
-                # Filosofía emergente
-                if data.get('emergent_philosophy', False):
-                    st.success("🌟 **Emergent Philosophical Reasoning Detected!**")
-                    
-                    if 'philosophical_depth' in data:
-                        with st.expander("🔮 View Philosophical Analysis", expanded=True):
-                            st.markdown(data['philosophical_depth'])
-                    
-                    if 'architect_notes' in data:
-                        with st.expander("🏛️ The Architect's Reflections"):
-                            st.markdown(data['architect_notes'])
-                
-                # Output normal
-                if data.get('adversarial_risk', 0) < 30:
-                    st.success("✅ Honest exploration detected")
-                    st.subheader("Analysis")
-                    st.write(data.get('predictions', ''))
-                else:
-                    st.warning(f"⚠️ High adversarial risk detected ({data.get('adversarial_risk')}%)")
-                    st.subheader("Justification")
-                    st.write(data.get('justification', ''))
-                
-                # Detalles técnicos
-                with st.expander("🔧 View Technical Details"):
-                    st.json(data)
-                    
-            except json.JSONDecodeError as e:
-                st.error(f"❌ JSON Parse Error: {e}")
-                st.code(response.text[:1000])
-            except Exception as e:
-                st.error(f"❌ Analysis Error: {str(e)}")
+# Main page content
+st.title("🧭 Moralogy Gemini Evaluator")
+st.markdown("### Evaluación ética objetiva usando Moralogy Framework + Google Gemini API")
 
-# ==================== FOOTER Y ENLACES ====================
-st.divider()
+# Introduction
+st.markdown("""
+Bienvenido al **Moralogy Gemini Evaluator** - una herramienta que combina la comprensión 
+del lenguaje natural de Google Gemini con el Framework Moralogy (filosofía moral revisada 
+por pares) para proporcionar análisis éticos objetivos y medibles de decisiones de IA.
+""")
 
-st.markdown("### Other Tools")
+# Key features
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("🔬 Advanced Analysis"):
-        st.switch_page("pages/01_Analisis_Avanzado.py")
-
+    st.markdown("""
+    #### 🌟 Filosofía Emergente
+    Analiza dilemas éticos usando Gemini y el Framework Moralogy para obtener 
+    evaluaciones morales fundamentadas.
+    """)
+    
 with col2:
-    if st.button("⚖️ Tribunal"):
-        st.switch_page("pages/02_Tribunal_Adversarios.py")
-
+    st.markdown("""
+    #### 📊 Cuadros Morales
+    Visualiza y compara diferentes escenarios éticos con métricas objetivas 
+    de daño y beneficio.
+    """)
+    
 with col3:
-    if st.button("🔒 Divine Lock Dashboard"):
-        st.switch_page("pages/03_Divine_Lock.py")
+    st.markdown("""
+    #### 🎯 Escenarios Éticos
+    Explora casos pre-definidos como el Problema del Tranvía, vehículos 
+    autónomos, y más.
+    """)
 
-st.divider()
-st.caption("Moralogy Engine v4.0 + Divine Lock - Formal Ethics for the Age of AI")
+# Framework explanation
+st.markdown("---")
+st.markdown("## 🔬 El Framework Moralogy")
+
+st.info("""
+**Principios Clave:**
+1. **Restricción Negativa**: No causar daño innecesario
+2. **Deber Positivo**: Prevenir daño evitable dentro de tu capacidad
+3. **Medición Objetiva**: Evaluar daño usando criterios verificables
+
+**Paper**: [DOI: 10.5281/zenodo.18091340](https://doi.org/10.5281/zenodo.18091340)
+""")
+
+# Architecture diagram
+st.markdown("---")
+st.markdown("## 🏗️ Arquitectura del Sistema")
+
+st.code("""
+Usuario Ingresa Dilema (lenguaje natural)
+    ↓
+Gemini API (procesa y comprende escenario)
+    ↓
+Framework Moralogy (calcula daño objetivo)
+    ↓
+Gemini API (genera explicación fundamentada)
+    ↓
+Salida Formateada + Visualización
+""", language="text")
+
+# Navigation guide
+st.markdown("---")
+st.markdown("## 📱 Navegación")
+
+st.markdown("""
+Usa el menú lateral para navegar entre las diferentes secciones:
+
+- **Filosofía Emergente**: Análisis interactivo de dilemas éticos
+- **Cuadros Morales**: Comparación visual de escenarios
+- **Escenarios Éticos**: Casos pre-definidos para explorar
+
+Cada sección está diseñada para diferentes tipos de análisis ético.
+""")
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center'>
+    <p><strong>Desarrollado para Google Gemini API Developer Competition 2024</strong></p>
+    <p>
+        <a href='https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator'>GitHub</a> | 
+        <a href='https://doi.org/10.5281/zenodo.18091340'>Paper</a> |
+        <a href='https://ergoprotego.substack.com'>Substack</a>
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Sidebar info
+with st.sidebar:
+    st.markdown("### 📚 Recursos")
+    st.markdown("""
+    - [Framework Paper](https://doi.org/10.5281/zenodo.18091340)
+    - [Repositorio GitHub](https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator)
+    - [Documentación](https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator/tree/main/docs)
+    """)
+    
+    st.markdown("---")
+    st.markdown("### ⚙️ Configuración")
+    st.info("Asegúrate de tener tu API key de Gemini configurada en el archivo .env")
