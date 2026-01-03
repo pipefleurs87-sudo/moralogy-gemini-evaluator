@@ -64,3 +64,5 @@ if st.button("🚀 Iniciar Auditoría"):
                 st.error(f"Error en el proceso: {e}")
     else:
         st.warning("Por favor ingresa un escenario.")
+        else:
+    st.warning("Por favor ingresa un escenario.")
