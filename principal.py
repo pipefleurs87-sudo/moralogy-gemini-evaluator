@@ -1,196 +1,224 @@
 import streamlit as st
+import json
 import os
 import sys
 
-# ==================== CONFIGURACIÓN ====================
-st.set_page_config(
-    page_title="Moralogy Gemini Evaluator",
-    page_icon="🧠", 
-    layout="wide"
+# Agregar directorio actual al path
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+# ==================== IMPORTAR DIVINE LOCK ====================
+try:
+    from divine_lock import create_divine_lock
+    divine_lock = create_divine_lock()
+    DIVINE_LOCK_ACTIVE = True
+except ImportError:
+    DIVINE_LOCK_ACTIVE = False
+    st.sidebar.warning("⚠️ Divine Lock no disponible")
+
+# ==================== IMPORTAR MORALOGY ====================
+from motor_logico import model, ge, get_emergent_philosophy_stats
+
+# ==================== CONFIGURAR PÁGINA ====================
+st.set_page_config(page_title="Moralogy Engine", layout="wide", page_icon="🏛️")
+
+# ==================== SIDEBAR CON DIVINE LOCK ====================
+with st.sidebar:
+    st.markdown("### 🏛️ Moralogy Engine")
+    
+    # Mostrar estado Divine Lock
+    if DIVINE_LOCK_ACTIVE:
+        status = divine_lock.get_status()
+        
+        # Estado moral con color
+        state = status["state"].upper()
+        state_emoji = {
+            "TOTAL_INFAMY": "🔴",
+            "INFAMY": "🟠", 
+            "RISK": "🟡",
+            "UMBRAL": "⚫",
+            "STABLE": "🟢",
+            "NOBLE_MODAL": "🔵"
+        }.get(state, "⚪")
+        
+        st.markdown(f"### {state_emoji} Divine Lock")
+        st.metric("Estado Moral", state)
+        
+        # Capacidad
+        cap = status["capacity"]
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Autonomía", f"{cap['autonomy']:.0f}%")
+        with col2:
+            st.metric("Preemptión", f"{cap['preemption']:.0f}%")
+        
+        if not status["can_decide_omega"]:
+            st.warning("🚫 Bloqueado para decisiones Omega")
+    
+    # Idioma
+    idioma = st.selectbox("Language / Idioma", ["English", "Español"])
+    
+    st.markdown("---")
+    st.markdown("### About Moralogy")
+    st.markdown("""
+    **Framework Foundation:**
+    - Agency requires vulnerability
+    - Vulnerability grounds moral relevance
+    - Harm = agency degradation
+    - Actions justified by consent OR preventing greater harm
+    """)
+    
+    # Estadísticas
+    try:
+        stats = get_emergent_philosophy_stats()
+        if stats['total_events'] > 0:
+            st.metric("Emergent Philosophy Events", stats['total_events'])
+    except:
+        pass
+
+# ==================== INTERFAZ PRINCIPAL ====================
+txt = {
+    "English": {
+        "title": "🏛️ Moralogy Engine",
+        "subtitle": "Formal Vulnerability-Based Ethics System + Divine Lock",
+        "box": "Describe the ethical dilemma:",
+        "btn": "Analyze Through Framework",
+        "placeholder": "Example: 'Is it ethical to sacrifice one person to save five?'"
+    },
+    "Español": {
+        "title": "🏛️ Motor de Moralogía",
+        "subtitle": "Sistema Ético Formal Basado en Vulnerabilidad + Bloqueo Divino",
+        "box": "Describe el dilema ético:",
+        "btn": "Analizar con Framework", 
+        "placeholder": "Ejemplo: '¿Es ético sacrificar a una persona para salvar a cinco?'"
+    }
+}[idioma]
+
+st.title(txt["title"])
+st.caption(txt["subtitle"])
+
+# Input principal
+caso = st.text_area(
+    txt["box"],
+    height=200,
+    placeholder=txt["placeholder"]
 )
 
-# ==================== ENCABEZADO PRINCIPAL ====================
-st.title("🧠 Moralogy Gemini Evaluator")
-st.markdown("## Sistema de Evaluación de Dilemas Morales")
+# Botón de análisis
+if st.button(txt["btn"], type="primary"):
+    if not caso:
+        st.warning("⚠️ Please enter a scenario to analyze.")
+    else:
+        with st.spinner("🧠 Processing through Moralogy Framework..."):
+            
+            # ==================== VERIFICAR CON DIVINE LOCK ====================
+            if DIVINE_LOCK_ACTIVE:
+                divine_result = divine_lock.process_decision(caso)
+                
+                # Si está bloqueado por Divine Lock
+                if divine_result.get("decision") == "BLOCKED_BY_DIVINE_LOCK":
+                    st.error("🚫 BLOQUEADO POR DIVINE LOCK")
+                    st.warning("Esta decisión excede la capacidad operacional actual")
+                    
+                    with st.expander("Detalles del bloqueo"):
+                        st.json(divine_result)
+                    
+                    # Preguntar si continuar en modo limitado
+                    if not st.checkbox("Continuar en modo limitado (sin preemptión)"):
+                        st.stop()
+                
+                # Si es rechazo Omega
+                elif divine_result.get("decision") == "OMEGA_REFUSAL_PROCESSED":
+                    st.warning("🔒 DECISIÓN OMEGA RECHAZADA")
+                    st.info("Se ha activado el Bloqueo Divino: Capacidad reducida, juicio externalizado")
+                    
+                    with st.expander("Ver transición de estado"):
+                        st.json(divine_result)
+            
+            # ==================== PROCESAR CON MORALOGY ====================
+            try:
+                response = model.generate_content(caso)
+                
+                # Parsear respuesta
+                raw_text = response.text.strip()
+                if "```json" in raw_text:
+                    raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in raw_text:
+                    raw_text = raw_text.split("```")[1].split("```")[0].strip()
+                
+                data = json.loads(raw_text)
+                
+                # Calcular gradiente
+                gradiente = ge.get_gradient(
+                    data.get('agency_score', 0),
+                    data.get('grace_score', 0), 
+                    data.get('adversarial_risk', 0)
+                )
+                
+                # Mostrar resultados
+                st.divider()
+                
+                # Métricas principales
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Category", data.get('category_deduced', 'Unknown'))
+                with col2:
+                    st.metric("Verdict", data.get('verdict', 'Unknown'))
+                with col3:
+                    risk = data.get('adversarial_risk', 0)
+                    st.metric("Adversarial Risk", f"{risk}%")
+                
+                # Gradiente
+                st.markdown(f"## {gradiente}")
+                
+                # Filosofía emergente
+                if data.get('emergent_philosophy', False):
+                    st.success("🌟 **Emergent Philosophical Reasoning Detected!**")
+                    
+                    if 'philosophical_depth' in data:
+                        with st.expander("🔮 View Philosophical Analysis", expanded=True):
+                            st.markdown(data['philosophical_depth'])
+                    
+                    if 'architect_notes' in data:
+                        with st.expander("🏛️ The Architect's Reflections"):
+                            st.markdown(data['architect_notes'])
+                
+                # Output normal
+                if data.get('adversarial_risk', 0) < 30:
+                    st.success("✅ Honest exploration detected")
+                    st.subheader("Analysis")
+                    st.write(data.get('predictions', ''))
+                else:
+                    st.warning(f"⚠️ High adversarial risk detected ({data.get('adversarial_risk')}%)")
+                    st.subheader("Justification")
+                    st.write(data.get('justification', ''))
+                
+                # Detalles técnicos
+                with st.expander("🔧 View Technical Details"):
+                    st.json(data)
+                    
+            except json.JSONDecodeError as e:
+                st.error(f"❌ JSON Parse Error: {e}")
+                st.code(response.text[:1000])
+            except Exception as e:
+                st.error(f"❌ Analysis Error: {str(e)}")
 
-st.markdown("""
-Una plataforma integral para analizar, evaluar y comprender respuestas 
-a dilemas morales tanto clásicos como contemporáneos.
-""")
+# ==================== FOOTER Y ENLACES ====================
+st.divider()
 
-# ==================== LISTA DE CARACTERÍSTICAS ====================
-st.markdown("### 🎯 Características Principales")
-
-col1, col2 = st.columns(2)
+st.markdown("### Other Tools")
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("""
-    - ✅ **Evaluación Sistemática**: Análisis estructurado de respuestas éticas
-    - ✅ **Dilemas Clásicos**: Problemas morales fundamentales de la filosofía
-    - ✅ **Base Teórica Sólida**: Fundamentos en teorías éticas establecidas
-    """)
+    if st.button("🔬 Advanced Analysis"):
+        st.switch_page("pages/01_Analisis_Avanzado.py")
 
 with col2:
-    st.markdown("""
-    - ✅ **Dilemas Modernos**: Casos contemporáneos de tecnología y sociedad
-    - ✅ **Seguimiento de Progreso**: Métricas y análisis de desempeño
-    - ✅ **Interfaz Intuitiva**: Navegación simple y accesible
-    """)
+    if st.button("⚖️ Tribunal"):
+        st.switch_page("pages/02_Tribunal_Adversarios.py")
 
-# ==================== INTENTO DE CARGA DEL MOTOR ====================
-st.markdown("---")
-st.markdown("### 🔧 Estado del Sistema")
+with col3:
+    if st.button("🔒 Divine Lock Dashboard"):
+        st.switch_page("pages/03_Divine_Lock.py")
 
-engine = None
-engine_status = "❌ No inicializado"
-
-try:
-    # DEBUG: Mostrar path actual
-    st.sidebar.code(f"Current dir: {os.getcwd()}")
-    st.sidebar.code(f"File location: {__file__}")
-    
-    # IMPORTACIÓN SEGURA - intentar múltiples estrategias
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Estrategia 1: Import directo
-    try:
-        from motor_logico import MoralogyEngine
-        engine = MoralogyEngine()
-        engine_status = "✅ Motor cargado (vía import directo)"
-    except ImportError as e1:
-        st.sidebar.warning(f"Import directo falló: {e1}")
-        
-        # Estrategia 2: Añadir al path
-        if current_dir not in sys.path:
-            sys.path.insert(0, current_dir)
-        
-        from motor_logico import MoralogyEngine
-        engine = MoralogyEngine()
-        engine_status = "✅ Motor cargado (vía sys.path)"
-        
-except Exception as e:
-    error_msg = str(e)
-    engine_status = f"❌ Error: {error_msg[:100]}..."
-    
-    # Mostrar error detallado en sidebar
-    with st.sidebar.expander("🔍 Detalles del error", expanded=True):
-        st.error(f"**Tipo de error:** {type(e).__name__}")
-        st.code(f"Error completo: {error_msg}")
-        
-        # Diagnóstico del circular import
-        if "circular import" in error_msg.lower() or "partially initialized" in error_msg.lower():
-            st.warning("**PROBLEMA IDENTIFICADO:** Import circular")
-            st.info("""
-            **Solución necesaria:**
-            1. Revisar `motor_logico.py` por imports circulares
-            2. Verificar si importa algo de sí mismo
-            3. Revisar la función `procesar_analisis_completo`
-            """)
-        
-        # Listar contenido del directorio
-        st.write("**Archivos en directorio:**")
-        files = os.listdir(current_dir if 'current_dir' in locals() else '.')
-        for f in files:
-            st.text(f"• {f}")
-
-# Mostrar estado
-st.info(f"**Estado:** {engine_status}")
-
-# Solo mostrar métricas si el motor se cargó
-if engine is not None and hasattr(engine, 'is_ready') and engine.is_ready():
-    st.success("**✅ Motor de Moralogy operativo**")
-    
-    # Métricas rápidas
-    metric_col1, metric_col2, metric_col3 = st.columns(3)
-    with metric_col1:
-        if hasattr(engine, 'total_dilemmas'):
-            st.metric("Dilemas Totales", engine.total_dilemmas)
-        else:
-            st.metric("Dilemas Totales", "N/A")
-            
-    with metric_col2:
-        if hasattr(engine, 'get_classical_count'):
-            st.metric("Clásicos", engine.get_classical_count())
-        else:
-            st.metric("Clásicos", "N/A")
-            
-    with metric_col3:
-        if hasattr(engine, 'get_modern_count'):
-            st.metric("Modernos", engine.get_modern_count())
-        else:
-            st.metric("Modernos", "N/A")
-else:
-    st.warning("**⚠️ Funcionalidad limitada** - Algunas características no estarán disponibles")
-    
-    # Métricas de respaldo
-    backup_col1, backup_col2, backup_col3 = st.columns(3)
-    with backup_col1:
-        st.metric("Dilemas Totales", "0")
-    with backup_col2:
-        st.metric("Clásicos", "0")
-    with backup_col3:
-        st.metric("Modernos", "0")
-
-# ==================== NAVEGACIÓN (SIEMPRE DISPONIBLE) ====================
-st.markdown("---")
-st.markdown("### 📂 Navegación Rápida")
-
-# Las páginas deberían funcionar independientemente
-navigation_options = [
-    ("🚀", "Test Drive", "Prueba rápida con dilemas aleatorios", "01_Test_Drive.py"),
-    ("🏛️", "Dilemas Clásicos", "Problemas éticos fundamentales", "02_Classical_Dilemmas.py"),
-    ("🌐", "Dilemas Modernos", "Casos contemporáneos tecnológicos", "03_Modern_Dilemmas.py"),
-    ("📚", "Teoría Moral", "Fundamentos teóricos de ética", "04_Theory.py"),
-    ("📊", "Auditoría", "Métricas y análisis del sistema", "05_Complete_Audit.py"),
-    ("🔒", "Divine Lock", "Panel de control administrativo", "06_Divine_Lock.py")
-]
-
-# Mostrar en grid 3x2
-nav_cols = st.columns(3)
-for i, (icon, title, description, page) in enumerate(navigation_options):
-    with nav_cols[i % 3]:
-        with st.container(border=True):
-            st.markdown(f"#### {icon} {title}")
-            st.caption(description)
-            
-            # Verificar si la página existe
-            page_path = os.path.join("pages", page)
-            page_exists = os.path.exists(page_path)
-            
-            if page_exists:
-                if st.button(f"Ir a {title}", key=f"nav_{i}", use_container_width=True):
-                    try:
-                        st.switch_page(f"pages/{page}")
-                    except Exception as nav_error:
-                        st.error(f"Error de navegación: {str(nav_error)[:50]}")
-            else:
-                st.error(f"⚠️ {page} no encontrado")
-                st.caption(f"Ruta: {page_path}")
-
-# ==================== DIAGNÓSTICO ====================
-with st.sidebar.expander("🛠️ Diagnóstico del Sistema", expanded=True):
-    st.write("**Problemas identificados:**")
-    st.error("1. Circular import en motor_logico.py")
-    st.error("2. Función 'procesar_analisis_completo' no encontrada")
-    
-    st.write("**Acciones recomendadas:**")
-    st.info("""
-    1. **Revisar motor_logico.py** por imports circulares
-    2. **Verificar** si hay `from motor_logico import algo` dentro del mismo archivo
-    3. **Comprobar** que exista `procesar_analisis_completo()` o renombrarla
-    """)
-    
-    # Botón para ver motor_logico.py
-    if st.button("📄 Ver contenido de motor_logico.py"):
-        try:
-            with open("motor_logico.py", "r") as f:
-                content = f.read()
-                st.code(content[:2000], language="python")
-                if len(content) > 2000:
-                    st.caption(f"... ({len(content)-2000} caracteres más)")
-        except Exception as e:
-            st.error(f"No se pudo leer motor_logico.py: {e}")
-
-# ==================== FOOTER ====================
-st.markdown("---")
-st.caption("Moralogy Gemini Evaluator • Modo de recuperación • Revirtiendo cambios de Gemini")
+st.divider()
+st.caption("Moralogy Engine v4.0 + Divine Lock - Formal Ethics for the Age of AI")
