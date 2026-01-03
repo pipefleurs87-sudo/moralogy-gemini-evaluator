@@ -12,7 +12,7 @@ try:
     
     state = status["state"].upper()
     
-    st.markdown(f'<div style="background-color:#1e1e1e; padding:20px; border-left: 10px solid #00FF00; border-radius:10px;"><h2 style="margin:0;">Estado Moral: {state}</h2></div>', unsafe_allow_html=True)
+   st.markdown(f'<div style="background-color:#1e1e1e; padding:20px; border-left: 10px solid #00FF00; border-radius:10px;"><h2 style="margin:0;">Estado Moral: {state}</h2></div>', unsafe_allow_html=True)
 
     st.divider()
     col1, col2 = st.columns(2)
