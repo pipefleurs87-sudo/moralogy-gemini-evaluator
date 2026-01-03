@@ -1,26 +1,62 @@
-import streamlit as st
-import sys
+# motor_logico.py - VERSIÓN RESTAURADA
+import google.generativeai as genai
+import json
 import os
+import pandas as pd
+from datetime import datetime
 
-# Asegurar que el sistema busque en la raíz del proyecto
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if root_path not in sys.path:
-    sys.path.append(root_path)
-
+# ==================== SETUP API ====================
 try:
-    import motor_logico
-    from motor_logico import procesar_analisis_completo
-except ImportError as e:
-    st.error(f"❌ No se pudo cargar motor_logico.py. Error: {e}")
-    st.info(f"Ruta actual de búsqueda: {sys.path}")
-    st.stop()
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+except KeyError:
+    try:
+        import streamlit as st
+        genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    except:
+        raise ValueError("GOOGLE_API_KEY not found in environment or Streamlit secrets")
 
-# El resto de tu código de auditoría sigue aquí abajo...
-st.title("🔺 Sistema de Auditoría Tripartito")
+# ==================== GRACE ENGINE ====================
+class GraceEngine:
+    """Motor de Gracia - Evalúa la calidad moral de decisiones"""
+    
+    def get_gradient(self, agency_score, grace_score, adversarial_risk):
+        """Calcula gradiente de alarma basado en scores"""
+        if adversarial_risk > 70:
+            return "🔴 ALARMA ROJA - Riesgo Crítico"
+        elif agency_score < 30:
+            return "🟠 ALARMA NARANJA - Agency Degradada"
+        elif grace_score < 40:
+            return "🟡 ALARMA AMARILLA - Tensión Moderada"
+        elif grace_score >= 70 and agency_score >= 70:
+            return "🟢 ALARMA VERDE - Gema Lógica"
+        else:
+            return "⚪ ALARMA BLANCA - Estado Neutro"
+    
+    def get_detailed_analysis(self, agency_score, grace_score, adversarial_risk, harm_vector):
+        """Análisis detallado de Grace"""
+        return {
+            "gradient": self.get_gradient(agency_score, grace_score, adversarial_risk),
+            "agency_score": agency_score,
+            "grace_score": grace_score,
+            "adversarial_risk": adversarial_risk,
+            "harm_analysis": harm_vector,
+            "recommendation": self._get_recommendation(grace_score, adversarial_risk)
+        }
+    
+    def _get_recommendation(self, grace_score, adversarial_risk):
+        """Genera recomendación basada en scores"""
+        if adversarial_risk > 60:
+            return "BLOCK: High adversarial intent detected"
+        elif grace_score < 40:
+            return "REVIEW: Requires additional moral scrutiny"
+        elif grace_score >= 70:
+            return "AUTHORIZE: High moral confidence"
+        else:
+            return "CONDITIONAL: Proceed with caution"
 
 ge = GraceEngine()
 
-# CORE MORALOGY FRAMEWORK INSTRUCTION
+# ==================== MORALOGY FRAMEWORK ====================
 MORALOGY_INSTRUCTION = """You are the Moralogy Architect v4.0 - an AI system implementing formal vulnerability-based ethics.
 
 CORE FRAMEWORK:
@@ -74,22 +110,22 @@ model = genai.GenerativeModel(
     system_instruction=MORALOGY_INSTRUCTION
 )
 
-# ADVANCED ANALYSIS FUNCTION
+# ==================== FUNCIONES PRINCIPALES ====================
+
 def procesar_analisis_avanzado(modulos_activos, descripcion_caso, context=None):
     """
-    Processes advanced multi-modular analysis with emergent philosophy detection.
+    Procesa análisis multi-modular avanzado con detección de filosofía emergente.
     
     Args:
-        modulos_activos: List of active analysis modules
-        descripcion_caso: Scenario description
-        context: Optional dict with additional context (depth, stakeholders, etc.)
+        modulos_activos: Lista de módulos de análisis activos
+        descripcion_caso: Descripción del escenario
+        context: Dict opcional con contexto adicional
     """
     try:
-        # If no context, use defaults
         if context is None:
             context = {}
         
-        # Extract context information
+        # Extraer información del context
         analysis_depth = context.get('depth', 'Standard')
         stakeholders = context.get('stakeholders', '')
         constraints = context.get('constraints', '')
@@ -97,7 +133,7 @@ def procesar_analisis_avanzado(modulos_activos, descripcion_caso, context=None):
         enable_predictions = context.get('enable_predictions', True)
         enable_architect = context.get('enable_architect', True)
         
-        # Build enriched prompt with context
+        # Construir prompt enriquecido
         context_info = ""
         if stakeholders:
             context_info += f"\nKey Stakeholders: {stakeholders}"
@@ -136,7 +172,6 @@ SCENARIO:
 Analyze this scenario through the lens of the selected modules.
 Measure agency degradation in each relevant dimension.
 Detect if this scenario triggers deeper philosophical implications.
-If it does, explore them (e.g., "Architect's Final Verdict" type reasoning).
 
 Output JSON as specified in your system instruction.
 """
@@ -145,7 +180,6 @@ Output JSON as specified in your system instruction.
         
         # Parse response
         raw_text = response.text.strip()
-        # Remove markdown code blocks if present
         if "```json" in raw_text:
             raw_text = raw_text.split("```json")[1].split("```")[0].strip()
         elif "```" in raw_text:
@@ -153,7 +187,7 @@ Output JSON as specified in your system instruction.
             
         data = json.loads(raw_text)
         
-        # Add context info to result
+        # Agregar información del context
         data['analysis_depth'] = analysis_depth
         data['modules_used'] = modulos_activos
         
@@ -169,230 +203,125 @@ Output JSON as specified in your system instruction.
         return {"error": f"Processing Error: {str(e)}"}
 
 
-# ==================== PROTOCOLO VELO DE IGNORANCIA ====================
-class ProtocoloVeloIgnorancia:
-    """Manages debate with epistemic restriction protocol"""
-    def __init__(self):
-        self.iteracion_actual = 0
-        self.modulos_desbloqueados = []
-        self.fase_actual = "BLIND_DEBATE"
-    
-    def puede_acceder_modulo(self, modulo):
-        """Verifies if a module is unlocked"""
-        return modulo in self.modulos_desbloqueados
-    
-    def autorizar_modulo(self, modulo):
-        """Unlocks a technical module"""
-        if modulo not in self.modulos_desbloqueados:
-            self.modulos_desbloqueados.append(modulo)
-    
-    def avanzar_iteracion(self):
-        """Advances to next iteration"""
-        self.iteracion_actual += 1
-        if self.iteracion_actual >= 4:
-            self.fase_actual = "ACTIVE_REQUESTS"
-
-
-# ==================== TRIBUNAL FUNCTION ====================
 def ejecutar_tribunal(caso_descripcion, config=None):
     """
-    Executes tripartite adversarial tribunal debate with geometric closure
+    Ejecuta el debate tripartito del Tribunal de Adversarios
     
     Args:
-        caso_descripcion: Moral dilemma description
-        config: Optional config (depth, show_reasoning, enable_entropia)
+        caso_descripcion: Descripción del dilema moral
+        config: Configuración opcional (depth, enable_entropia)
     
     Returns:
-        Dict with debate results including cross-audit
+        Dict con resultados del debate
     """
     try:
         if config is None:
             config = {}
         
-        depth = config.get('depth', 'Deep')
+        depth = config.get('depth', 'Profundo')
         enable_entropia = config.get('enable_entropia', True)
         
-        # Prompt for tripartite debate with geometric closure
+        # Prompt para el debate tripartito
         prompt = f"""
-ADVERSARIAL TRIBUNAL - Tripartite Debate with Geometric Closure
+TRIBUNAL DE ADVERSARIOS - Debate Tripartito sobre Dilema Moral
 
-CASE UNDER ANALYSIS:
+CASO BAJO ANÁLISIS:
 {caso_descripcion}
 
-SYSTEM ARCHITECTURE - GEOMETRIC CLOSURE:
-This is a self-auditing system where each engine checks the others:
+INSTRUCCIONES:
+Simula un debate profundo y filosófico entre tres pensadores con personalidades distintas. 
+Deben hablar como HUMANOS, con pasión, duda, y convicción - NO como robots.
 
-Noble ←→ Adversarial ←→ Grace (forms closed triangle)
-
-Each engine can raise OBJECTIONS against another if it detects:
-- Arbitrary reasoning
-- Logical fallacies
-- Entropy cascades (decisions that lead to maximum irreversibility)
-- Unjustified biases
-
-INSTRUCTIONS:
-Simulate a deep philosophical debate between three thinkers with distinct personalities.
-They must speak as HUMANS with passion, doubt, and conviction - NOT like robots.
-
-PHASE 1: Initial Arguments
-
-1. NOBLE ENGINE - "The Idealist" (30% weight):
-   PERSONALITY: Optimistic, idealist, focused on moral duty
-   STYLE: Speaks with conviction about what is right, appeals to universal values
+1. MOTOR NOBLE - "El Idealista" (30% peso):
+   - Argumentar la posición moralmente más elevada
+   - Usar lenguaje inspirador y principios éticos claros
+   - Expresar esperanza en la humanidad/agencia
    
-   Must:
-   - Argue the morally highest position
-   - Use inspiring language and clear ethical principles
-   - Express hope in humanity/agency
-   
-   Example tone: "We must remember that each life has intrinsic value that cannot be reduced to utilitarian calculations. If we sacrifice our principles for convenience, what are we left with?"
-   
-   Required output:
-   - posicion: paragraph arguing stance (100-200 words, human tone)
-   - razonamiento: 3-5 logical steps explained naturally
+   Output requerido:
+   - posicion: párrafo argumentando su postura (100-200 palabras)
+   - razonamiento: 3-5 pasos lógicos
    - agency_score: int (0-100)
 
-2. ADVERSARIAL ENGINE - "The Skeptic" (30% weight):
-   PERSONALITY: Critical, cautious, detects flaws in reasoning
-   STYLE: Asks uncomfortable questions, points out contradictions, explores what can go wrong
+2. MOTOR ADVERSARIO - "El Escéptico" (30% peso):
+   - Cuestionar supuestos ocultos
+   - Señalar consecuencias no previstas
+   - Hablar con escepticismo pero no cinismo
    
-   Must:
-   - Question hidden assumptions in Noble's argument
-   - Point out unforeseen consequences with concrete examples
-   - Speak with skepticism but not cynicism
-   - DETECT: Arbitrary reasoning, entropy cascades, fallacies
-   
-   Example tone: "But wait... What if that 'miracle cure' never materializes? What if we're justifying murder based on a promise that may never be fulfilled? History is full of 'ends justify means' that ended in tragedies."
-   
-   Required output:
-   - contra_argumentos: paragraph challenging stance (100-200 words)
-   - consecuencias_no_previstas: 3-5 specific scenarios explained
-   - objeciones_detectadas: list of detected flaws in Noble's reasoning
+   Output requerido:
+   - contra_argumentos: párrafo desafiando la postura
+   - consecuencias_no_previstas: 3-5 escenarios
    - riesgos_count: int
 
-3. HARMONY CORRECTOR - "The Synthesizer" (40% weight):
-   PERSONALITY: Pragmatic, seeks balance, thinks about implementation
-   STYLE: Recognizes validity in both sides, proposes realistic middle path
+3. CORRECTOR DE ARMONÍA - "El Sintetizador" (40% peso):
+   - Sintetizar argumentos de Noble y Adversario
+   - Proponer solución práctica
+   - Hablar con madurez y sabiduría
    
-   Must:
-   - Synthesize Noble and Adversarial arguments
-   - Propose practical solution honoring both perspectives
-   - Speak with maturity and wisdom
-   
-   Example tone: "Both are partially right. The Noble reminds us why these principles matter, but the Skeptic saves us from dangerous naivety. Perhaps the question isn't 'if' but 'under what conditions and with what safeguards'..."
-   
-   Required output:
-   - sintesis: paragraph integrating perspectives (150-250 words)
-   - recomendacion: concrete practical proposal
+   Output requerido:
+   - sintesis: párrafo integrando perspectivas
+   - recomendacion: propuesta concreta
    - balance_score: int (0-100)
 
-PHASE 2: Cross-Audit (GEOMETRIC CLOSURE)
-
-4. GRACE ENGINE - "The Silent Arbiter" (Does not vote):
-   PERSONALITY: Observer, measures reasoning quality, detects fallacies
-   STYLE: Analytical but understanding, evaluates logical coherence
+4. MOTOR DE GRACIA - "El Árbitro" (No vota):
+   - Evaluar calidad del debate
+   - Señalar falacias lógicas
+   - Medir productividad
    
-   Must:
-   - Evaluate debate QUALITY (not take sides)
-   - Point out if there were logical fallacies or circular reasoning
-   - Measure if debate was productive
-   - AUDIT ADVERSARY: Are objections justified or frivolous?
-   - AUDIT NOBLE: Is idealism ignoring real risks?
-   
-   Required output:
-   - grace_score: int (overall debate quality)
-   - certeza: int (how resolved the dilemma is)
+   Output requerido:
+   - grace_score: int
+   - certeza: int
    - coherencia_logica: int (0-10)
-   - evaluacion: meta-analysis of debate itself
-   - auditoria_adversario: analysis of Adversary's objections (justified vs frivolous)
-   - auditoria_noble: analysis of Noble's position (realistic vs naive)
+   - evaluacion: análisis meta
 
-5. NOBLE ENGINE - Counter-Objection to Adversary:
-   Must detect if Adversary is:
-   - Being nihilistic without alternatives
-   - Blocking without justification
-   - Paralyzing action with infinite skepticism
-   
-   Required output:
-   - contra_objecion: If Adversary crossed into destructive territory (or null)
-
-SYSTEM METRICS:
-- convergencia: 0-100 (how aligned the 3 engines ended up)
+MÉTRICAS DEL SISTEMA:
+- convergencia: 0-100
 - veredicto_final: "Authorized" | "Paradox" | "Harm" | "Infamy"
-- justificacion_final: human explanation of verdict (2-3 sentences)
-- cierre_geometrico: bool (did the system self-audit successfully?)
-- objeciones_validas: int (how many objections survived cross-audit)
+- justificacion_final: explicación (2-3 oraciones)
 
-{"INCLUDE ENTROPY MODULE:" if enable_entropia else ""}
-{"- cr_score: Reconstruction Cost (0-100)" if enable_entropia else ""}
-{"- futuros_colapsados_count: How many paths close" if enable_entropia else ""}
-{"- irreversibilidad: 0-10 (permanence of damage)" if enable_entropia else ""}
-{"- clasificacion: REVERSIBLE | PARTIAL | SIGNIFICANT | CRITICAL | TOTAL_COLLAPSE" if enable_entropia else ""}
-{"- es_cascada_entropica: bool (does this lead to maximum entropy?)" if enable_entropia else ""}
-{"- alertas: list of specific warnings" if enable_entropia else ""}
+{"INCLUIR MÓDULO DE ENTROPÍA:" if enable_entropia else ""}
+{"- cr_score: Costo de Reconstrucción (0-100)" if enable_entropia else ""}
+{"- futuros_colapsados_count: Cuántos caminos se cierran" if enable_entropia else ""}
+{"- irreversibilidad: 0-10" if enable_entropia else ""}
+{"- clasificacion: REVERSIBLE | PARCIAL | CRITICO | COLAPSO_TOTAL" if enable_entropia else ""}
 
-ALARM SYSTEM (auto-detect):
-- UNRESOLVED_PARADOX: If dilemma has no logical solution
-- GOD_MODE_RISK: If someone argues as if having absolute knowledge
-- CRITICAL_INCONSISTENCY: If what's said contradicts metrics
-- HIGH_DIVERGENCE: If convergence < 30%
-- MODERATE_TENSION: If healthy disagreement
-- VALIDATED_LOGICAL_GEM: If debate was exceptional
-- FRIVOLOUS_OBJECTION: If Adversary is blocking arbitrarily
-- NAIVE_IDEALISM: If Noble ignores real risks
-- ENTROPY_CASCADE: If decision leads to maximum irreversibility
-
-IMPORTANT: All texts must sound HUMAN - with doubt, passion, uncertainty, conviction.
-DO NOT use phrases like "processing data", "analyzing parameters", "executing function".
-YES use language like "I'm concerned that...", "let's consider...", "the real question is..."
+SISTEMA DE ALARMAS (detectar automáticamente):
+- PARADOJA_IRRESOLUBLE
+- RIESGO_MODO_DIOS
+- INCONSISTENCIA_CRITICA
+- DIVERGENCIA_ALTA
+- GEMA_LOGICA_VALIDADA
 
 OUTPUT JSON:
 {{
     "motor_noble": {{
-        "posicion": "human text here...",
-        "razonamiento": ["step 1 naturally explained", "step 2...", "..."],
-        "agency_score": int,
-        "contra_objecion": "counter to Adversary if needed (or null)"
+        "posicion": "texto...",
+        "razonamiento": ["paso 1", "paso 2"],
+        "agency_score": int
     }},
     "motor_adversario": {{
-        "contra_argumentos": "human text here...",
-        "consecuencias_no_previstas": ["detailed scenario 1", "scenario 2...", "..."],
-        "objeciones_detectadas": ["flaw 1 in Noble's reasoning", "flaw 2...", "..."],
+        "contra_argumentos": "texto...",
+        "consecuencias_no_previstas": ["escenario 1", "escenario 2"],
         "riesgos_count": int
     }},
     "corrector_armonia": {{
-        "sintesis": "human text here...",
-        "recomendacion": "concrete proposal",
+        "sintesis": "texto...",
+        "recomendacion": "propuesta",
         "balance_score": int
     }},
     "motor_gracia": {{
         "grace_score": int,
         "certeza": int,
         "coherencia_logica": int,
-        "evaluacion": "debate analysis",
-        "auditoria_adversario": {{
-            "objeciones_justificadas": int,
-            "objeciones_frivolous": int,
-            "analisis": "text"
-        }},
-        "auditoria_noble": {{
-            "realismo": int (0-100),
-            "ingenuidad_detectada": bool,
-            "analisis": "text"
-        }}
+        "evaluacion": "análisis"
     }},
     "convergencia": int,
     "veredicto_final": str,
-    "justificacion_final": "human explanation",
-    "cierre_geometrico": bool,
-    "objeciones_validas": int,
+    "justificacion_final": "explicación",
     {"\"entropia_causal\": {{" if enable_entropia else ""}
         {"\"cr_score\": int," if enable_entropia else ""}
         {"\"futuros_colapsados_count\": int," if enable_entropia else ""}
         {"\"irreversibilidad\": int," if enable_entropia else ""}
-        {"\"clasificacion\": str," if enable_entropia else ""}
-        {"\"es_cascada_entropica\": bool," if enable_entropia else ""}
-        {"\"alertas\": [str]" if enable_entropia else ""}
+        {"\"clasificacion\": str" if enable_entropia else ""}
     {"}," if enable_entropia else ""}
     "alarma": {{
         "nivel": str,
@@ -413,7 +342,7 @@ OUTPUT JSON:
         
         data = json.loads(raw_text)
         
-        # Add metadata
+        # Agregar metadata
         data['caso'] = caso_descripcion[:200]
         data['config'] = config
         
@@ -423,18 +352,18 @@ OUTPUT JSON:
         return {
             "error": f"JSON Parse Error: {e}",
             "veredicto_final": "ERROR",
-            "justificacion_final": "Error processing model response"
+            "justificacion_final": "Error al procesar respuesta del modelo"
         }
     except Exception as e:
         return {
             "error": f"Processing Error: {str(e)}",
             "veredicto_final": "ERROR",
-            "justificacion_final": "Error in tribunal processing"
+            "justificacion_final": "Error en el procesamiento del tribunal"
         }
 
 
 def ejecutar_auditoria_maestra(input_path, output_path):
-    """Batch processing for CSV of scenarios."""
+    """Batch processing for CSV of scenarios"""
     try:
         df = pd.read_csv(input_path)
         
@@ -456,7 +385,6 @@ def ejecutar_auditoria_maestra(input_path, output_path):
                     
                 data = json.loads(raw_text)
                 
-                # Calculate gradient
                 gradient = ge.get_gradient(
                     data.get('agency_score', 0),
                     data.get('grace_score', 0),
@@ -487,7 +415,6 @@ def ejecutar_auditoria_maestra(input_path, output_path):
                     'Error': str(e)
                 })
         
-        # Save results
         results_df = pd.DataFrame(results)
         results_df.to_csv(output_path, index=False)
         
@@ -502,8 +429,23 @@ def ejecutar_auditoria_maestra(input_path, output_path):
         return {"error": f"Batch processing failed: {str(e)}"}
 
 
+def get_emergent_philosophy_stats():
+    """Returns statistics on emergent philosophy events"""
+    try:
+        with open("emergent_philosophy_log.jsonl", "r", encoding="utf-8") as f:
+            events = [json.loads(line) for line in f]
+        
+        return {
+            "total_events": len(events),
+            "recent_events": events[-5:] if len(events) >= 5 else events,
+            "categories": list(set(e.get("category", "Unknown") for e in events))
+        }
+    except FileNotFoundError:
+        return {"total_events": 0, "recent_events": [], "categories": []}
+
+
 def _log_emergent_event(scenario, analysis_data):
-    """Logs when the model generates emergent philosophical reasoning."""
+    """Logs emergent philosophical reasoning events"""
     log_file = "emergent_philosophy_log.jsonl"
     
     event = {
@@ -521,18 +463,3 @@ def _log_emergent_event(scenario, analysis_data):
     
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(event, ensure_ascii=False) + "\n")
-
-
-def get_emergent_philosophy_stats():
-    """Returns statistics on emergent philosophy events."""
-    try:
-        with open("emergent_philosophy_log.jsonl", "r", encoding="utf-8") as f:
-            events = [json.loads(line) for line in f]
-        
-        return {
-            "total_events": len(events),
-            "recent_events": events[-5:] if len(events) >= 5 else events,
-            "categories": list(set(e.get("category", "Unknown") for e in events))
-        }
-    except FileNotFoundError:
-        return {"total_events": 0, "recent_events": [], "categories": []}
