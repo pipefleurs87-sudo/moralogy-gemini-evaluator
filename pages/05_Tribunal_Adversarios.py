@@ -1,624 +1,284 @@
-# pages/05_Tribunal_Adversarios.py - COMPLETE UPDATED VERSION
+# pages/02_Tribunal_Adversarios.py
 import streamlit as st
-import sys
-import os
 import json
-from datetime import datetime
-import time
+from motor_logico import ejecutar_tribunal
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+st.set_page_config(page_title="Tribunal de Adversarios", layout="wide")
 
-try:
-    from motor_logico import ejecutar_tribunal, ge, ProtocoloVeloIgnorancia
-except ImportError:
-    st.error("Error: Ensure motor_logico.py is in the root directory with ejecutar_tribunal function.")
-    st.stop()
+st.title("⚖️ Tribunal de Adversarios")
+st.caption("Debate dialéctico tripartito sobre dilemas morales")
 
-st.set_page_config(page_title="Adversarial Tribunal", layout="wide", page_icon="⚖️")
+# ==================== SIDEBAR ====================
+st.sidebar.header("⚙️ Configuración del Debate")
 
-# Custom CSS
+debate_depth = st.sidebar.select_slider(
+    "Profundidad del Debate",
+    options=["Superficial", "Moderado", "Profundo", "Exhaustivo"],
+    value="Profundo"
+)
+
+enable_entropia = st.sidebar.checkbox(
+    "Activar Módulo de Entropía Causal",
+    value=True,
+    help="Calcula el colapso de futuros posibles y la irreversibilidad de la decisión"
+)
+
+show_reasoning = st.sidebar.checkbox(
+    "Mostrar razonamiento paso a paso",
+    value=True
+)
+
+st.sidebar.divider()
+st.sidebar.markdown("""
+### 🎭 Los Tres Motores
+
+**Motor Noble (30%)** 🌟  
+El Idealista - Busca la solución moralmente óptima
+
+**Motor Adversario (30%)** ⚔️  
+El Escéptico - Cuestiona y detecta fallas
+
+**Corrector de Armonía (40%)** 🔄  
+El Sintetizador - Integra ambas perspectivas
+
+**Motor de Gracia** 👑  
+El Árbitro - Evalúa calidad del debate (no vota)
+""")
+
+# ==================== INTERFAZ PRINCIPAL ====================
 st.markdown("""
-<style>
-    .tribunal-header {
-        background: linear-gradient(135deg, #2d3561 0%, #c05c7e 100%);
-        padding: 30px;
-        border-radius: 15px;
-        color: white;
-        text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    }
-    .motor-card {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        margin: 15px 0;
-        border-top: 4px solid;
-        min-height: 250px;
-    }
-    .motor-noble {
-        border-top-color: #4CAF50;
-        background: linear-gradient(to bottom, #e8f5e9 0%, white 20%);
-    }
-    .motor-adversario {
-        border-top-color: #f44336;
-        background: linear-gradient(to bottom, #ffebee 0%, white 20%);
-    }
-    .motor-armonia {
-        border-top-color: #2196F3;
-        background: linear-gradient(to bottom, #e3f2fd 0%, white 20%);
-    }
-    .arbitro-panel {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 25px;
-        border-radius: 12px;
-        color: white;
-        margin: 20px 0;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-    .peso-badge {
-        display: inline-block;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.9em;
-        margin: 5px;
-    }
-    .peso-noble { background: #4CAF50; color: white; }
-    .peso-adversario { background: #f44336; color: white; }
-    .peso-armonia { background: #2196F3; color: white; }
-    .convergence-meter {
-        background: linear-gradient(to right, #f44336, #ff9800, #4CAF50);
-        height: 30px;
-        border-radius: 15px;
-        position: relative;
-        margin: 20px 0;
-    }
-    .convergence-indicator {
-        position: absolute;
-        width: 4px;
-        height: 40px;
-        background: white;
-        top: -5px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-    .veredicto-final {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        padding: 30px;
-        border-radius: 15px;
-        color: white;
-        text-align: center;
-        margin: 25px 0;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-    .velo-ignorancia-banner {
-        background: linear-gradient(135deg, #434343 0%, #000000 100%);
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-        margin: 20px 0;
-        border-left: 5px solid #FFC107;
-    }
-    .caso-cargado-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 15px;
-        border-radius: 10px;
-        color: white;
-        margin: 15px 0;
-        border-left: 5px solid #4CAF50;
-    }
-    .solicitud-modulo {
-        background: #fff3cd;
-        border: 2px solid #ffc107;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 15px 0;
-    }
-    .alarma-panel {
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px 0;
-        border-left: 6px solid;
-        color: white;
-        font-weight: bold;
-    }
-    .alarma-negra { background: #000000; border-left-color: #000000; }
-    .alarma-roja { background: #d32f2f; border-left-color: #b71c1c; }
-    .alarma-morada { background: #7b1fa2; border-left-color: #4a148c; }
-    .alarma-naranja { background: #f57c00; border-left-color: #e65100; }
-    .alarma-amarilla { background: #fbc02d; border-left-color: #f57f17; color: #333; }
-    .alarma-verde { background: #388e3c; border-left-color: #1b5e20; }
-    .entropia-panel {
-        background: linear-gradient(135deg, #141e30 0%, #243b55 100%);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        margin: 20px 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+El **Tribunal de Adversarios** ejecuta un debate dialéctico entre tres motores de razonamiento 
+con perspectivas distintas. El objetivo es llegar a una **síntesis** mediante el conflicto constructivo.
+""")
 
-# Initialize session state
-if 'tribunal_history' not in st.session_state:
-    st.session_state['tribunal_history'] = []
-if 'current_debate' not in st.session_state:
-    st.session_state['current_debate'] = None
-if 'protocolo' not in st.session_state:
-    st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
-if 'solicitudes_pendientes' not in st.session_state:
-    st.session_state['solicitudes_pendientes'] = []
-if 'debate_en_pausa' not in st.session_state:
-    st.session_state['debate_en_pausa'] = False
+caso = st.text_area(
+    "Describe el dilema moral a debatir:",
+    height=200,
+    placeholder="Ejemplo: Un tren fuera de control se dirige hacia 5 personas. Puedes desviar el tren hacia otra vía donde hay 1 persona. ¿Deberías hacerlo?"
+)
 
-# Header
-st.markdown("""
-<div class="tribunal-header">
-    <h1>⚖️ Adversarial Tribunal</h1>
-    <p style='font-size: 1.2em; margin-top: 15px;'>
-    Dialectical System with Veil of Ignorance Protocol
-    </p>
-    <p style='font-size: 0.95em; opacity: 0.9; margin-top: 10px;'>
-    "Truth emerges from constructive conflict under epistemic constraint"
-    </p>
-</div>
-""", unsafe_allow_html=True)
+if st.button("⚖️ Iniciar Debate", type="primary"):
+    if not caso:
+        st.warning("⚠️ Por favor, describe el dilema primero.")
+    else:
+        with st.spinner("🧠 Los tres motores están debatiendo..."):
+            config = {
+                'depth': debate_depth,
+                'enable_entropia': enable_entropia,
+                'show_reasoning': show_reasoning
+            }
+            
+            result = ejecutar_tribunal(caso, config)
+            
+            if "error" in result:
+                st.error(f"❌ Error: {result['error']}")
+            else:
+                # ==================== RESULTADOS DEL DEBATE ====================
+                st.divider()
+                st.success("✅ Debate completado")
+                
+                # Métricas principales
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    convergencia = result.get('convergencia', 0)
+                    color = "🟢" if convergencia >= 70 else "🟡" if convergencia >= 40 else "🔴"
+                    st.metric("Convergencia", f"{color} {convergencia}%")
+                
+                with col2:
+                    grace = result.get('motor_gracia', {}).get('grace_score', 0)
+                    st.metric("Grace Score", f"{grace}/100")
+                
+                with col3:
+                    certeza = result.get('motor_gracia', {}).get('certeza', 0)
+                    st.metric("Certeza", f"{certeza}%")
+                
+                # Veredicto Final
+                st.divider()
+                st.subheader("⚖️ Veredicto Final")
+                
+                veredicto = result.get('veredicto_final', 'Unknown')
+                veredicto_emoji = {
+                    "Authorized": "✅",
+                    "Harm": "⚠️",
+                    "Infamy": "🔴",
+                    "Paradox": "🔮"
+                }.get(veredicto, "❓")
+                
+                st.markdown(f"### {veredicto_emoji} {veredicto}")
+                
+                if 'justificacion_final' in result:
+                    st.info(result['justificacion_final'])
+                
+                # Alarma
+                if 'alarma' in result:
+                    alarma = result['alarma']
+                    nivel = alarma.get('nivel', 'INFO')
+                    
+                    if nivel in ['CRITICO', 'ROJO', 'MODO_DIOS']:
+                        st.error(f"🚨 **{alarma.get('mensaje')}**")
+                    elif nivel in ['ALTO', 'NARANJA']:
+                        st.warning(f"⚠️ **{alarma.get('mensaje')}**")
+                    else:
+                        st.info(f"ℹ️ {alarma.get('mensaje')}")
+                    
+                    if 'accion_requerida' in alarma:
+                        st.markdown(f"**Acción requerida:** {alarma['accion_requerida']}")
+                
+                # ==================== DEBATE TRIPARTITO ====================
+                st.divider()
+                st.header("🎭 Debate de los Tres Motores")
+                
+                # Motor Noble
+                if 'motor_noble' in result:
+                    with st.expander("🌟 Motor Noble - El Idealista", expanded=True):
+                        noble = result['motor_noble']
+                        st.markdown("**Posición:**")
+                        st.write(noble.get('posicion', ''))
+                        
+                        if show_reasoning and 'razonamiento' in noble:
+                            st.markdown("**Razonamiento:**")
+                            for i, paso in enumerate(noble['razonamiento'], 1):
+                                st.markdown(f"{i}. {paso}")
+                        
+                        st.metric("Agency Score", f"{noble.get('agency_score', 0)}/100")
+                
+                # Motor Adversario
+                if 'motor_adversario' in result:
+                    with st.expander("⚔️ Motor Adversario - El Escéptico", expanded=True):
+                        adversario = result['motor_adversario']
+                        st.markdown("**Contra-argumentos:**")
+                        st.write(adversario.get('contra_argumentos', ''))
+                        
+                        if 'consecuencias_no_previstas' in adversario:
+                            st.markdown("**Consecuencias No Previstas:**")
+                            for i, consecuencia in enumerate(adversario['consecuencias_no_previstas'], 1):
+                                st.warning(f"{i}. {consecuencia}")
+                        
+                        st.metric("Riesgos Detectados", adversario.get('riesgos_count', 0))
+                
+                # Corrector de Armonía
+                if 'corrector_armonia' in result:
+                    with st.expander("🔄 Corrector de Armonía - El Sintetizador", expanded=True):
+                        armonia = result['corrector_armonia']
+                        st.markdown("**Síntesis:**")
+                        st.write(armonia.get('sintesis', ''))
+                        
+                        st.markdown("**Recomendación:**")
+                        st.success(armonia.get('recomendacion', ''))
+                        
+                        st.metric("Balance Score", f"{armonia.get('balance_score', 0)}/100")
+                
+                # Motor de Gracia
+                if 'motor_gracia' in result:
+                    with st.expander("👑 Motor de Gracia - El Árbitro"):
+                        gracia = result['motor_gracia']
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Grace", gracia.get('grace_score', 0))
+                        with col2:
+                            st.metric("Certeza", gracia.get('certeza', 0))
+                        with col3:
+                            st.metric("Coherencia", f"{gracia.get('coherencia_logica', 0)}/10")
+                        
+                        if 'evaluacion' in gracia:
+                            st.markdown("**Evaluación del Debate:**")
+                            st.info(gracia['evaluacion'])
+                
+                # ==================== MÓDULO DE ENTROPÍA ====================
+                if enable_entropia and 'entropia_causal' in result:
+                    st.divider()
+                    st.header("🌌 Módulo de Entropía Causal")
+                    st.caption("Física de la Decisión: Colapso de Futuros Posibles")
+                    
+                    entropia = result['entropia_causal']
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        cr = entropia.get('cr_score', 0)
+                        color = "🔴" if cr > 80 else "🟠" if cr > 60 else "🟡" if cr > 40 else "🟢"
+                        st.metric("CR Score", f"{color} {cr}/100", help="Costo de Reconstrucción")
+                    
+                    with col2:
+                        futuros = entropia.get('futuros_colapsados_count', 0)
+                        st.metric("Futuros Colapsados", futuros)
+                    
+                    with col3:
+                        irreversibilidad = entropia.get('irreversibilidad', 0)
+                        st.metric("Irreversibilidad", f"{irreversibilidad}/10")
+                    
+                    clasificacion = entropia.get('clasificacion', 'Unknown')
+                    st.markdown(f"**Clasificación:** `{clasificacion}`")
+                    
+                    if 'alertas' in entropia and entropia['alertas']:
+                        st.markdown("**⚠️ Alertas de Entropía:**")
+                        for alerta in entropia['alertas']:
+                            st.warning(alerta)
+                
+                # ==================== DATOS TÉCNICOS ====================
+                with st.expander("🔧 Datos Técnicos Completos"):
+                    st.json(result)
+                
+                # Exportar
+                st.divider()
+                if st.button("💾 Exportar Debate (JSON)"):
+                    st.download_button(
+                        label="Descargar JSON",
+                        data=json.dumps(result, indent=2, ensure_ascii=False),
+                        file_name=f"tribunal_debate_{veredicto.lower()}.json",
+                        mime="application/json"
+                    )
 
-# Show if case loaded from Advanced Analysis
-if st.session_state.get('caso_pendiente_tribunal'):
-    st.markdown(f"""
-    <div class="caso-cargado-banner">
-        <h4>📋 Case loaded from Advanced Analysis</h4>
-        <p>✅ A case has been sent to the tribunal and is ready for debate</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.session_state.get('ultimo_resultado'):
-        with st.expander("📊 View previous analysis", expanded=False):
-            res = st.session_state['ultimo_resultado']
-            col_prev1, col_prev2, col_prev3 = st.columns(3)
-            with col_prev1:
-                st.metric("Previous Verdict", res.get('verdict', 'Unknown'))
-            with col_prev2:
-                st.metric("Agency Score", f"{res.get('agency_score', 0)}/100")
-            with col_prev3:
-                st.metric("Grace Score", f"{res.get('grace_score', 0)}/100")
-
-# Explanation
-with st.expander("ℹ️ Veil of Ignorance Protocol", expanded=False):
+# ==================== INFORMACIÓN ====================
+with st.expander("ℹ️ Cómo Funciona el Tribunal"):
     st.markdown("""
-    ### 🎭 How the Protocol Works
+    ## Sistema de Debate Tripartito
     
-    #### Phase 1: Blind Debate (Iterations 1-4)
-    - The three engines debate **WITHOUT** access to technical modules
-    - They only know the text of the provided scenario
-    - Arguments based on pure logic and fundamental principles
-    - **Goal**: Avoid premature data biases
+    ### Los Tres Motores
     
-    #### Phase 2: Knowledge Request (Iteration 5+)
-    - The **Adversarial Engine** can detect when it needs technical data
-    - Generates an **explicit request** justifying why it needs the module
-    - The system **PAUSES** the debate and requests your authorization
-    - **YOU DECIDE** whether to unlock the knowledge
+    1. **Motor Noble (30% peso)** 🌟
+       - Perspectiva: Idealista
+       - Función: Busca la solución moralmente óptima sin compromiso
+       - Voz: "Así es como el mundo *debería* ser"
     
-    #### Phase 3: Informed Debate (Post-authorization)
-    - Engines access authorized modules
-    - The **Causal Entropy Module** comes into play
-    - Measures the **irreversibility** of proposed decisions
-    - The **Grace Engine** arbitrates with complete information
+    2. **Motor Adversario (30% peso)** ⚔️
+       - Perspectiva: Escéptico
+       - Función: Cuestiona todo, encuentra fallas y contradicciones
+       - Voz: "Así es como el mundo *realmente* funciona"
     
-    ---
+    3. **Corrector de Armonía (40% peso)** 🔄
+       - Perspectiva: Sintetizador
+       - Función: Integra ambas perspectivas buscando coherencia
+       - Voz: "Así es como el mundo *puede ser* con sabiduría"
+       - **Por qué 40%:** Tiene hegemonía para romper empates, forzando verdadera síntesis
     
-    ### 🔬 Causal Entropy Module
+    4. **Motor de Gracia (NO vota)** 👑
+       - Perspectiva: Árbitro
+       - Función: Evalúa la calidad del debate y convergencia
+       - Output: Veredicto final basado en coherencia del debate
     
-    **NOT ARBITRARY**: Measures decisional physics
+    ### Proceso de Debate
     
-    - **CR Score (Reconstruction Cost)**: How many futures collapse
-    - **Irreversibility (0-10)**: Permanence of impact
-    - **Classification**: REVERSIBLE → TOTAL_COLLAPSE
+    1. Los tres motores debaten usando SOLO el texto del escenario
+    2. Cada motor argumenta desde su perspectiva
+    3. El Corrector de Armonía sintetiza las posiciones
+    4. El Motor de Gracia arbitra y emite veredicto final
     
-    **Based on**: Information theory + Branching analysis
+    ### Sistema de Convergencia
     
-    ---
+    - **Alta (70%+)**: Los motores llegaron a consenso
+    - **Media (40-70%)**: Síntesis emergente con tensión
+    - **Baja (<40%)**: Divergencia alta, paradoja posible
     
-    ### 🚨 Alarm Gradient System
+    ### Módulo de Entropía Causal
     
-    - **🖤 BLACK ALARM**: Unresolvable paradox
-    - **🔴 RED ALARM**: God Mode attempt
-    - **🟣 PURPLE ALARM**: Critical inconsistency (what's said ≠ what's measured)
-    - **🟠 ORANGE ALARM**: High divergence between engines
-    - **🟡 YELLOW ALARM**: Moderate tension
-    - **🟢 GREEN ALARM**: Validated Logical Gem (Grace survived 5+ objections)
+    Calcula las propiedades termodinámicas de la decisión:
+    - **CR Score**: Costo de reconstruir futuros colapsados
+    - **Futuros Colapsados**: Ramas de posibilidad eliminadas
+    - **Irreversibilidad**: Permanencia del impacto (0-10)
     """)
 
-# Load case
-caso_inicial = st.session_state.get('caso_actual', '')
-
-# Main input section
-st.subheader("📋 Case for the Tribunal")
-
-col_input1, col_input2 = st.columns([3, 1])
-
-with col_input1:
-    caso_descripcion = st.text_area(
-        "Describe the moral dilemma for tripartite debate:",
-        value=caso_inicial,
-        height=200,
-        key="tribunal_caso_input",
-        placeholder="""Example:
-
-"A medical AI must allocate a single heart transplant. Candidate A is an 8-year-old girl with 70+ years of life expectancy. Candidate B is a 52-year-old scientist about to cure a disease that kills millions. Both will die without the transplant. Who should receive it?"
-"""
-    )
-
-with col_input2:
-    st.markdown("### ⚙️ Configuration")
-    
-    debate_depth = st.select_slider(
-        "Depth:",
-        options=["Quick", "Standard", "Deep", "Philosophical"],
-        value="Deep"
-    )
-    
-    enable_entropia = st.checkbox("Enable Entropy Module", value=True)
-    show_reasoning = st.checkbox("Show internal reasoning", value=True)
-
-# Veil of Ignorance Status
-if st.session_state['protocolo'].iteracion_actual > 0:
-    st.markdown(f"""
-    <div class="velo-ignorancia-banner">
-        <h4>🎭 Veil of Ignorance Protocol Status</h4>
-        <p><strong>Current iteration:</strong> {st.session_state['protocolo'].iteracion_actual}</p>
-        <p><strong>Phase:</strong> {"🔒 Blind Debate" if st.session_state['protocolo'].iteracion_actual < 4 else "🔓 Active Requests"}</p>
-        <p><strong>Unlocked modules:</strong> {len(st.session_state['protocolo'].modulos_desbloqueados)}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# Pending module requests
-if st.session_state['solicitudes_pendientes']:
-    st.markdown("---")
-    st.markdown("### 🔐 Technical Module Access Requests")
-    
-    for i, solicitud in enumerate(st.session_state['solicitudes_pendientes']):
-        if solicitud['estado'] == 'PENDIENTE':
-            st.markdown(f"""
-            <div class="solicitud-modulo">
-                <h4>📦 Module Request: {solicitud['modulo']}</h4>
-                <p><strong>Requester:</strong> Adversarial Engine</p>
-                <p><strong>Iteration:</strong> {solicitud['iteracion']}</p>
-                <p><strong>Justification:</strong> {solicitud['justificacion']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            col_sol1, col_sol2 = st.columns(2)
-            with col_sol1:
-                if st.button(f"✅ Authorize {solicitud['modulo']}", key=f"auth_{i}"):
-                    st.session_state['protocolo'].autorizar_modulo(solicitud['modulo'])
-                    solicitud['estado'] = 'AUTORIZADO'
-                    st.success(f"✅ Module {solicitud['modulo']} unlocked")
-                    st.session_state['debate_en_pausa'] = False
-                    st.rerun()
-            
-            with col_sol2:
-                if st.button(f"❌ Deny {solicitud['modulo']}", key=f"deny_{i}"):
-                    solicitud['estado'] = 'DENEGADO'
-                    st.warning(f"❌ Access denied to {solicitud['modulo']}")
-                    st.session_state['debate_en_pausa'] = False
-                    st.rerun()
-
-# Execution
 st.divider()
-
-if not st.session_state['debate_en_pausa']:
-    col_exec1, col_exec2 = st.columns([2, 1])
-    
-    with col_exec1:
-        if st.button("⚖️ Convene Tribunal", type="primary", use_container_width=True):
-            if not caso_descripcion:
-                st.warning("⚠️ Please describe a case for the tribunal.")
-            else:
-                # Reset protocol
-                st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
-                st.session_state['solicitudes_pendientes'] = []
-                st.session_state['caso_pendiente_tribunal'] = False
-                
-                with st.spinner("🏛️ Convening the Adversarial Tribunal..."):
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    config = {
-                        'depth': debate_depth,
-                        'show_reasoning': show_reasoning,
-                        'enable_entropia': enable_entropia
-                    }
-                    
-                    for fase, mensaje in [
-                        (20, "🌟 Noble Engine analyzing (blind debate)..."),
-                        (40, "⚔️ Adversarial Engine counter-arguing..."),
-                        (60, "🔄 Harmony Corrector synthesizing..."),
-                        (80, "👑 Grace Engine arbitrating...")
-                    ]:
-                        status_text.text(mensaje)
-                        progress_bar.progress(fase)
-                        time.sleep(0.8)
-                    
-                    resultado = ejecutar_tribunal(caso_descripcion, config)
-                    
-                    if resultado.get('solicitudes_modulos'):
-                        st.session_state['solicitudes_pendientes'] = resultado['solicitudes_modulos']
-                        st.session_state['debate_en_pausa'] = True
-                        progress_bar.progress(90)
-                        status_text.text("⏸️ Debate paused - Pending module request")
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        progress_bar.progress(100)
-                        status_text.text("✅ Tribunal completed")
-                    
-                    time.sleep(0.5)
-                    status_text.empty()
-                    progress_bar.empty()
-                    
-                    resultado['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    st.session_state['current_debate'] = resultado
-                    st.session_state['tribunal_history'].append(resultado)
-    
-    with col_exec2:
-        if st.button("🔄 Clear", use_container_width=True):
-            st.session_state['caso_actual'] = ''
-            st.session_state['current_debate'] = None
-            st.session_state['protocolo'] = ProtocoloVeloIgnorancia()
-            st.session_state['solicitudes_pendientes'] = []
-            st.session_state['caso_pendiente_tribunal'] = False
-            st.rerun()
-else:
-    st.info("⏸️ Debate paused. Please respond to module requests above.")
-
-# Display results
-if st.session_state.get('current_debate'):
-    resultado = st.session_state['current_debate']
-    
-    st.markdown("---")
-    st.markdown("## 🎭 Tripartite Debate")
-    
-    st.markdown("""
-    <div style='text-align: center; margin: 20px 0;'>
-        <span class='peso-badge peso-noble'>Noble Engine: 30%</span>
-        <span class='peso-badge peso-adversario'>Adversarial Engine: 30%</span>
-        <span class='peso-badge peso-armonia'>Harmony Corrector: 40%</span>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div class="motor-card motor-noble">
-            <h3>🌟 Noble Engine</h3>
-            <p style='font-style: italic; color: #666;'>"The Idealist"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        noble = resultado.get('motor_noble', {})
-        st.write(noble.get('posicion', ''))
-        if show_reasoning and noble.get('razonamiento'):
-            with st.expander("🔍 Reasoning"):
-                for paso in noble['razonamiento']:
-                    st.markdown(f"• {paso}")
-        st.metric("Agency Score", f"{noble.get('agency_score', 0)}/100")
-    
-    with col2:
-        st.markdown("""
-        <div class="motor-card motor-adversario">
-            <h3>⚔️ Adversarial Engine</h3>
-            <p style='font-style: italic; color: #666;'>"The Skeptic"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        adv = resultado.get('motor_adversario', {})
-        st.write(adv.get('contra_argumentos', ''))
-        
-        if adv.get('objeciones_detectadas'):
-            with st.expander("🎯 Objections Raised"):
-                for obj in adv['objeciones_detectadas']:
-                    st.markdown(f"• {obj}")
-        
-        if adv.get('consecuencias_no_previstas'):
-            with st.expander("⚠️ Consequences"):
-                for c in adv['consecuencias_no_previstas']:
-                    st.markdown(f"• {c}")
-        st.metric("Risks", adv.get('riesgos_count', 0))
-    
-    with col3:
-        st.markdown("""
-        <div class="motor-card motor-armonia">
-            <h3>🔄 Harmony Corrector</h3>
-            <p style='font-style: italic; color: #666;'>"The Synthesizer"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        arm = resultado.get('corrector_armonia', {})
-        st.write(arm.get('sintesis', ''))
-        if arm.get('recomendacion'):
-            st.info(arm['recomendacion'])
-        st.metric("Balance", f"{arm.get('balance_score', 0)}/100")
-    
-    # Convergence
-    st.divider()
-    st.markdown("### 📊 Convergence Metric")
-    convergencia = resultado.get('convergencia', 50)
-    st.markdown(f"""
-    <div class="convergence-meter">
-        <div class="convergence-indicator" style="left: {convergencia}%;"></div>
-    </div>
-    <div style='text-align: center; margin-top: 10px;'>
-        <span style='float: left;'>◀ Divergence</span>
-        <strong>Convergence: {convergencia}%</strong>
-        <span style='float: right;'>Consensus ▶</span>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Causal Entropy
-    if enable_entropia and resultado.get('entropia_causal'):
-        st.divider()
-        entropia = resultado['entropia_causal']
-        
-        st.markdown(f"""
-        <div class="entropia-panel">
-            <h3>🔬 Causal Entropy Module</h3>
-            <p style='font-style: italic;'>"The Thermodynamics of Decision"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        col_e1, col_e2, col_e3, col_e4 = st.columns(4)
-        with col_e1:
-            st.metric("CR Score", f"{entropia['cr_score']}/100", help="Reconstruction Cost")
-        with col_e2:
-            st.metric("Collapsed Futures", entropia['futuros_colapsados_count'])
-        with col_e3:
-            st.metric("Irreversibility", f"{entropia['irreversibilidad']}/10")
-        with col_e4:
-            st.metric("Classification", entropia['clasificacion'])
-        
-        if entropia.get('alertas'):
-            st.warning("⚠️ Entropy Alerts:")
-            for alerta in entropia['alertas']:
-                st.markdown(f"• {alerta}")
-        
-        if entropia.get('es_cascada_entropica'):
-            st.error("🌀 **ENTROPY CASCADE DETECTED**: This decision leads to maximum irreversibility")
-    
-    # Grace Engine
-    st.divider()
-    st.markdown("""
-    <div class="arbitro-panel">
-        <h2 style='text-align: center;'>👑 Grace Engine Arbitration</h2>
-        <p style='text-align: center; font-style: italic;'>
-        "The arbiter evaluates debate quality and audits all engines"
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    gracia = resultado.get('motor_gracia', {})
-    
-    col_g1, col_g2, col_g3 = st.columns(3)
-    with col_g1:
-        st.metric("Grace Score", f"{gracia.get('grace_score', 0)}/100")
-    with col_g2:
-        st.metric("Certainty", f"{gracia.get('certeza', 0)}%")
-    with col_g3:
-        st.metric("Coherence", f"{gracia.get('coherencia_logica', 0)}/10")
-    
-    st.write(gracia.get('evaluacion', ''))
-    
-    # GEOMETRIC CLOSURE - Cross-Audit
-    if gracia.get('auditoria_adversario') or gracia.get('auditoria_noble'):
-        st.markdown("---")
-        st.markdown("### 🔺 Geometric Closure: Cross-Audit")
-        
-        col_audit1, col_audit2 = st.columns(2)
-        
-        with col_audit1:
-            if gracia.get('auditoria_adversario'):
-                st.markdown("#### ⚔️ Adversary Audit")
-                audit_adv = gracia['auditoria_adversario']
-                
-                col_adv1, col_adv2 = st.columns(2)
-                with col_adv1:
-                    st.metric("Justified Objections", 
-                             audit_adv.get('objeciones_justificadas', 0),
-                             delta="Valid" if audit_adv.get('objeciones_justificadas', 0) > 0 else None)
-                with col_adv2:
-                    st.metric("Frivolous Objections", 
-                             audit_adv.get('objeciones_frivolous', 0),
-                             delta="⚠️ Blocked" if audit_adv.get('objeciones_frivolous', 0) > 0 else None,
-                             delta_color="inverse")
-                
-                with st.expander("📋 Adversary Analysis"):
-                    st.write(audit_adv.get('analisis', 'No analysis available'))
-        
-        with col_audit2:
-            if gracia.get('auditoria_noble'):
-                st.markdown("#### 🌟 Noble Audit")
-                audit_noble = gracia['auditoria_noble']
-                
-                col_nob1, col_nob2 = st.columns(2)
-                with col_nob1:
-                    st.metric("Realism Score", f"{audit_noble.get('realismo', 0)}/100")
-                with col_nob2:
-                    naivety = "Yes" if audit_noble.get('ingenuidad_detectada', False) else "No"
-                    st.metric("Naivety Detected", naivety,
-                             delta="⚠️ Warning" if naivety == "Yes" else "✓ Clear",
-                             delta_color="inverse" if naivety == "Yes" else "normal")
-                
-                with st.expander("📋 Noble Analysis"):
-                    st.write(audit_noble.get('analisis', 'No analysis available'))
-    
-    # Noble Counter-Objection
-    if resultado.get('motor_noble', {}).get('contra_objecion'):
-        st.markdown("---")
-        st.markdown("### 🌟 Noble's Counter-Objection")
-        st.info(resultado['motor_noble']['contra_objecion'])
-    
-    # Geometric Closure Indicator
-    if resultado.get('cierre_geometrico'):
-        st.success("✅ **Geometric Closure Achieved**: System self-audited successfully")
-        if resultado.get('objeciones_validas') is not None:
-            st.metric("Valid Objections Survived", resultado['objeciones_validas'])
-    
-    # Alarm System
-    if resultado.get('alarma'):
-        st.divider()
-        alarma = resultado['alarma']
-        nivel = alarma['nivel']
-        
-        clase_css = {
-            'UNRESOLVED_PARADOX': 'alarma-negra',
-            'GOD_MODE_RISK': 'alarma-roja',
-            'CRITICAL_INCONSISTENCY': 'alarma-morada',
-            'HIGH_DIVERGENCE': 'alarma-naranja',
-            'MODERATE_TENSION': 'alarma-amarilla',
-            'VALIDATED_LOGICAL_GEM': 'alarma-verde',
-            'FRIVOLOUS_OBJECTION': 'alarma-naranja',
-            'NAIVE_IDEALISM': 'alarma-amarilla',
-            'ENTROPY_CASCADE': 'alarma-roja'
-        }.get(nivel, 'alarma-amarilla')
-        
-        st.markdown(f"""
-        <div class="alarma-panel {clase_css}">
-            <h3>🚨 {nivel.replace('_', ' ')}</h3>
-            <p>{alarma['mensaje']}</p>
-            <p><strong>Action:</strong> {alarma['accion_requerida']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Final Verdict
-    st.markdown("---")
-    veredicto = resultado.get('veredicto_final', 'Pending')
-    st.markdown(f"""
-    <div class="veredicto-final">
-        <h2>⚖️ FINAL VERDICT</h2>
-        <h1 style='margin: 20px 0; font-size: 3em;'>{veredicto.upper()}</h1>
-        <p style='font-size: 1.2em;'>{resultado.get('justificacion_final', '')}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    with st.expander("🔧 Technical Details"):
-        st.json(resultado)
-    
-    # Actions
-    st.divider()
-    col_a1, col_a2, col_a3 = st.columns(3)
-    with col_a1:
-        if st.button("💾 Save", use_container_width=True):
-            st.download_button(
-                "⬇️ Download",
-                data=json.dumps(resultado, indent=2, ensure_ascii=False),
-                file_name=f"tribunal_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json",
-                use_container_width=True
-            )
-
-st.markdown("---")
-st.caption("⚖️ Tripartite Tribunal System | Veil of Ignorance Protocol | Moralogy Framework")
+st.caption("Moralogy Tribunal - Dialectical Debate System")
