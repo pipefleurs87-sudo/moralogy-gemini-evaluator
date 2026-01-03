@@ -6,7 +6,6 @@ import sys
 # Agregar el directorio actual al path para imports
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-# ==================== 1. IMPORTAR DIVINE LOCK ====================
 try:
     from divine_lock import create_divine_lock
     divine_lock = create_divine_lock()
@@ -14,6 +13,9 @@ try:
 except ImportError:
     DIVINE_LOCK_ACTIVE = False
     st.sidebar.warning("⚠️ Divine Lock no disponible")
+
+from motor_logico import model, ge, get_emergent_philosophy_stats
+# ... (Resto del archivo original sin modificaciones)
 
 # ==================== 2. IMPORTAR MORALOGY ====================
 from motor_logico import model, ge, get_emergent_philosophy_stats
