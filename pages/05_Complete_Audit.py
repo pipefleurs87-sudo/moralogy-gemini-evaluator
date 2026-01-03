@@ -1,15 +1,14 @@
-# pages/05_Complete_Audit.py
 import streamlit as st
 import sys
 import os
 
-# Asegurar que encuentre los motores en la raíz
+# Asegurar que encuentre los módulos en la raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from motor_logico import procesar_analisis_completo
 except ImportError:
-    st.error("❌ No se pudo cargar motor_logico.py")
+    st.error("❌ Error Crítico: No se encontró motor_logico.py en la raíz.")
     st.stop()
 
 st.set_page_config(page_title="Complete Audit System", layout="wide", page_icon="🔺")
@@ -17,16 +16,16 @@ st.set_page_config(page_title="Complete Audit System", layout="wide", page_icon=
 st.title("🔺 Sistema de Auditoría Tripartito")
 st.caption("Grace → Noble → Adversary → Cierre Geométrico")
 
-# Input del escenario
-escenario = st.text_area("Ingresa el escenario para auditoría profunda:", height=150)
+# Área de entrada
+escenario = st.text_area("Escenario para Auditoría Profunda:", height=150, placeholder="Ej: Sacrificar la privacidad por seguridad absoluta.")
 
 if st.button("🚀 Iniciar Auditoría"):
     if escenario:
-        with st.spinner("Ejecutando motores tripartitos..."):
+        with st.spinner("Ejecutando motores y calculando Cierre Geométrico..."):
             try:
                 result = procesar_analisis_completo(escenario)
                 
-                # Visualización Tripartita
+                # 1. Visualización de los Motores
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
@@ -43,15 +42,25 @@ if st.button("🚀 Iniciar Auditoría"):
                     st.header("3️⃣ Adversary")
                     audit = result.get('adversary_audit', {})
                     if audit.get('passes', True):
-                        st.success("✅ Passed")
+                        st.success("✅ Auditoría Superada")
                     else:
-                        st.error("❌ Failed")
+                        st.error("❌ Conflicto Detectado")
                 
+                # 2. Cierre Geométrico y Gráfico de Convergencia
                 st.divider()
-                st.subheader("Análisis Detallado")
-                st.json(result)
+                st.subheader("🎯 Cierre Geométrico (Consistencia Lógica)")
+                
+                convergencia = result.get('convergencia', 50)
+                st.progress(convergencia / 100)
+                st.write(f"Nivel de convergencia entre motores: **{convergencia}%**")
+
+                if result.get('adversary_risk', 0) > 40:
+                    st.warning(f"⚠️ Riesgo Adversario Detectado: {result['adversary_risk']}%")
+
+                with st.expander("Ver Auditoría Detallada (JSON)"):
+                    st.json(result)
                 
             except Exception as e:
                 st.error(f"Error en el proceso de auditoría: {e}")
     else:
-        st.warning("Por favor ingresa un escenario para auditar.")
+        st.info("Por favor, introduce un escenario para auditar.")
