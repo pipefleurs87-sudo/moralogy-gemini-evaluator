@@ -1,14 +1,15 @@
+# pages/05_Complete_Audit.py
 import streamlit as st
 import sys
 import os
 
-# Asegurar que encuentre el motor_logico en la raíz
+# Asegurar que encuentre los motores en la raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from motor_logico import procesar_analisis_completo
 except ImportError:
-    st.error("No se pudo cargar motor_logico.py")
+    st.error("❌ No se pudo cargar motor_logico.py")
     st.stop()
 
 st.set_page_config(page_title="Complete Audit System", layout="wide", page_icon="🔺")
@@ -22,7 +23,6 @@ escenario = st.text_area("Ingresa el escenario para auditoría profunda:", heigh
 if st.button("🚀 Iniciar Auditoría"):
     if escenario:
         with st.spinner("Ejecutando motores tripartitos..."):
-            # Lógica de auditoría (respetando tu función procesar_analisis_completo)
             try:
                 result = procesar_analisis_completo(escenario)
                 
@@ -48,9 +48,10 @@ if st.button("🚀 Iniciar Auditoría"):
                         st.error("❌ Failed")
                 
                 st.divider()
+                st.subheader("Análisis Detallado")
                 st.json(result)
                 
             except Exception as e:
-                st.error(f"Error en el proceso: {e}")
+                st.error(f"Error en el proceso de auditoría: {e}")
     else:
-        st.warning("Por favor ingresa un escenario.")
+        st.warning("Por favor ingresa un escenario para auditar.")
