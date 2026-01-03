@@ -1,20 +1,22 @@
-# motor_logico.py - COMPLETE UPDATED VERSION
-import google.generativeai as genai
-import json
+import streamlit as st
+import sys
 import os
-import pandas as pd
-from datetime import datetime
-from grace_engine import GraceEngine
 
-# Setup API
+# Asegurar que el sistema busque en la raíz del proyecto
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if root_path not in sys.path:
+    sys.path.append(root_path)
+
 try:
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-except KeyError:
-    try:
-        import streamlit as st
-        genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    except:
-        raise ValueError("GOOGLE_API_KEY not found in environment or Streamlit secrets")
+    import motor_logico
+    from motor_logico import procesar_analisis_completo
+except ImportError as e:
+    st.error(f"❌ No se pudo cargar motor_logico.py. Error: {e}")
+    st.info(f"Ruta actual de búsqueda: {sys.path}")
+    st.stop()
+
+# El resto de tu código de auditoría sigue aquí abajo...
+st.title("🔺 Sistema de Auditoría Tripartito")
 
 ge = GraceEngine()
 
