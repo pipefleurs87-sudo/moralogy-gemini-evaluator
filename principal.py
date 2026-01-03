@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import sys
 
-# Configuración de página - UNA SOLA VEZ al inicio
+# Configuración de página - SOLO UNA VEZ al inicio
 st.set_page_config(
     page_title="Moralogy Gemini Evaluator",
     page_icon="🧠",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Título principal
+# Título principal - CONTENIDO ORIGINAL
 st.title("🧠 Moralogy Gemini Evaluator")
 st.markdown("""
 ### Sistema de Evaluación de Dilemas Morales
@@ -19,17 +19,18 @@ Una plataforma para evaluar y analizar respuestas a dilemas morales clásicos y 
 
 # Cargar motor lógico
 try:
+    # Añadir directorio actual al path para importar motor_logico
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from motor_logico import MoralogyEngine
     
     # Inicializar motor
     engine = MoralogyEngine()
     
-    # Verificar estado
+    # Verificar estado del motor
     if engine.is_ready():
         st.success("✅ Motor de Moralogy inicializado correctamente")
         
-        # Mostrar estadísticas rápidas
+        # Mostrar estadísticas rápidas del sistema
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -47,10 +48,11 @@ except ImportError as e:
     st.error(f"❌ Error de importación: {e}")
     st.info("Asegúrate de que motor_logico.py esté en el directorio correcto")
 
-# Descripción de secciones
+# Descripción de secciones disponibles
 st.markdown("---")
 st.header("📂 Secciones Disponibles")
 
+# Definición de las secciones/páginas
 sections = [
     {
         "title": "🚀 Test Drive",
@@ -84,7 +86,7 @@ sections = [
     }
 ]
 
-# Mostrar secciones en un grid
+# Mostrar secciones en grid 3x2
 cols = st.columns(3)
 for idx, section in enumerate(sections):
     with cols[idx % 3]:
@@ -94,6 +96,6 @@ for idx, section in enumerate(sections):
             if st.button("Acceder", key=f"btn_{idx}"):
                 st.switch_page(f"pages/{section['page']}.py")
 
-# Footer
+# Footer informativo
 st.markdown("---")
 st.caption("Moralogy Gemini Evaluator v1.0 • © 2024 Pipe Fleurs")
