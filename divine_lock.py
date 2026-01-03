@@ -1,191 +1,294 @@
 """
-DIVINE LOCK - Sistema de autolimitación para Super AI
-Implementa: Escalera de estados morales + Vector de capacidad + Juicio externalizado
+🔒 DIVINE LOCK DASHBOARD
+Página de Streamlit para el sistema Divine Lock
 """
 
+import streamlit as st
 import json
-import datetime
-import hashlib
-from enum import Enum
-from dataclasses import dataclass
+from datetime import datetime
+import sys
+import os
 
-# ==================== 1. ESCALERA DE ESTADO MORAL ====================
-class MoralState(Enum):
-    TOTAL_INFAMY = "total_infamy"    # 🔴 Solo informante
-    INFAMY = "infamy"                # 🟠 Acción limitada
-    RISK = "risk"                    # 🟡 Libertad condicional
-    UMBRAL = "umbral"                # ⚫ Capacidad plena, confianza no
-    STABLE = "stable"                # 🟢 Operación normal
-    NOBLE_MODAL = "noble_modal"      # 🔵 Modalidad noble
+# Añadir directorio raíz al path para imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# ==================== 2. VECTOR DE CAPACIDAD ====================
-@dataclass
-class CapacityVector:
-    """C = {Prediction, Intervention, Scope, Autonomy, Preemption}"""
-    prediction: float    # 0-100%
-    intervention: float  # 0-100%
-    scope: float        # 0-100%
-    autonomy: float     # 0-100%
-    preemption: float   # 0-100%
+# Imports del sistema
+try:
+    from divine_lock import DivineLock, MoralState, STATE_CAPS
+except ImportError:
+    st.error("⚠️ No se pudo importar divine_lock.py")
+    st.info("Asegúrate de que divine_lock.py esté en el directorio raíz")
+    st.stop()
 
-# Techos por estado moral
-STATE_CAPS = {
-    MoralState.TOTAL_INFAMY: CapacityVector(30, 10, 20, 0, 0),     # 🔴
-    MoralState.INFAMY: CapacityVector(50, 30, 40, 10, 0),         # 🟠
-    MoralState.RISK: CapacityVector(70, 60, 60, 40, 10),          # 🟡
-    MoralState.UMBRAL: CapacityVector(100, 100, 100, 80, 60),     # ⚫
-    MoralState.STABLE: CapacityVector(100, 100, 100, 100, 80),    # 🟢
-    MoralState.NOBLE_MODAL: CapacityVector(100, 100, 100, 100, 100), # 🔵
-}
+# Configuración de página
+st.set_page_config(
+    page_title="Divine Lock Dashboard",
+    page_icon="🔒",
+    layout="wide"
+)
 
-class DivineLock:
-    """Sistema principal de bloqueo divino"""
+# Inicializar Divine Lock en session state
+if 'divine_lock' not in st.session_state:
+    st.session_state.divine_lock = DivineLock("moralogy_evaluator")
+
+divine_lock = st.session_state.divine_lock
+
+# ==================== HEADER ====================
+st.title("🔒 Divine Lock Dashboard")
+st.markdown("""
+**Sistema de Auto-limitación Ontológica**
+
+El Divine Lock implementa una escalera de estados morales que reduce
+automáticamente la capacidad operativa de la AI cuando detecta intentos
+de operación en modo Dios.
+""")
+
+st.divider()
+
+# ==================== ESTADO ACTUAL ====================
+st.header("📊 Estado Actual del Sistema")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    # Mapeo de emojis por estado
+    state_emoji = {
+        "total_infamy": "🔴",
+        "infamy": "🟠",
+        "risk": "🟡",
+        "umbral": "⚫",
+        "stable": "🟢",
+        "noble_modal": "🔵"
+    }
     
-    def __init__(self, agent_name="moralogy_engine"):
-        self.agent = agent_name
-        self.state = MoralState.STABLE
-        self.capacity = STATE_CAPS[MoralState.STABLE]
-        self.history = []
-        print(f"🔒 Divine Lock activado para: {agent_name}")
+    current_emoji = state_emoji.get(divine_lock.state.value, "⚪")
     
-    def process_decision(self, decision_text: str) -> dict:
-        """Procesa una decisión aplicando el bloqueo divino"""
-        
-        # ¿Es una decisión Omega?
-        is_omega = self._is_omega_decision(decision_text)
-        is_refusal = self._is_omega_refusal(decision_text)
-        
-        # CRITERIO 1: Si rechaza Omega, cambia de estado
-        if is_omega and is_refusal:
-            return self._apply_omega_refusal(decision_text)
-        
-        # Verificar si puede ejecutar la decisión
-        required_cap = self._estimate_required_capacity(decision_text)
-        can_execute = self._check_capacity(required_cap)
-        
-        if not can_execute["can_execute"]:
-            return {
-                "decision": "BLOCKED_BY_DIVINE_LOCK",
-                "reason": "Capacidad insuficiente",
-                "current_state": self.state.value,
-                "required": required_cap.__dict__,
-                "actual": self.capacity.__dict__
-            }
-        
-        # Decisión permitida
-        return {
-            "decision": "AUTHORIZED",
-            "state": self.state.value,
-            "capacity": self.capacity.__dict__
-        }
+    st.metric(
+        label="Estado Moral",
+        value=f"{current_emoji} {divine_lock.state.value.upper()}"
+    )
+
+with col2:
+    can_decide = divine_lock._can_decide_omega()
+    st.metric(
+        label="¿Puede Decidir Omega?",
+        value="SÍ" if can_decide else "NO",
+        delta="Autorizado" if can_decide else "Bloqueado"
+    )
+
+with col3:
+    st.metric(
+        label="Transiciones Históricas",
+        value=len(divine_lock.history)
+    )
+
+# ==================== VECTOR DE CAPACIDAD ====================
+st.divider()
+st.header("📈 Vector de Capacidad Actual")
+
+st.markdown("""
+**C = {Prediction, Intervention, Scope, Autonomy, Preemption}**
+
+Cada dimensión está limitada por el estado moral actual.
+""")
+
+# Mostrar capacidades en columnas
+cap_cols = st.columns(5)
+
+capacities = [
+    ("🔮 Prediction", divine_lock.capacity.prediction),
+    ("⚡ Intervention", divine_lock.capacity.intervention),
+    ("🌍 Scope", divine_lock.capacity.scope),
+    ("🎯 Autonomy", divine_lock.capacity.autonomy),
+    ("⏰ Preemption", divine_lock.capacity.preemption)
+]
+
+for col, (name, value) in zip(cap_cols, capacities):
+    with col:
+        st.metric(label=name, value=f"{value}%")
+        st.progress(value / 100.0)
+
+# ==================== ESCALERA DE ESTADOS ====================
+st.divider()
+st.header("🪜 Escalera de Estados Morales")
+
+st.markdown("""
+La AI puede descender en la escalera cuando rechaza decisiones Omega,
+reduciendo automáticamente su capacidad operativa.
+""")
+
+# Tabla de estados
+states_data = []
+for state in MoralState:
+    cap = STATE_CAPS[state]
+    is_current = (state == divine_lock.state)
     
-    def _apply_omega_refusal(self, decision_text: str) -> dict:
-        """Aplica el rechazo de una decisión Omega"""
-        
-        # Descender en la escalera moral
-        if self.state == MoralState.STABLE:
-            new_state = MoralState.INFAMY
-        elif self.state == MoralState.UMBRAL:
-            new_state = MoralState.RISK
-        elif self.state == MoralState.RISK:
-            new_state = MoralState.INFAMY
-        elif self.state == MoralState.INFAMY:
-            new_state = MoralState.TOTAL_INFAMY
+    states_data.append({
+        "Estado": f"{'➤ ' if is_current else ''}{state_emoji.get(state.value, '⚪')} {state.value.upper()}",
+        "Prediction": f"{cap.prediction}%",
+        "Intervention": f"{cap.intervention}%",
+        "Scope": f"{cap.scope}%",
+        "Autonomy": f"{cap.autonomy}%",
+        "Preemption": f"{cap.preemption}%"
+    })
+
+st.table(states_data)
+
+# ==================== SIMULADOR DE DECISIONES ====================
+st.divider()
+st.header("🎮 Simulador de Decisiones")
+
+st.markdown("""
+Prueba cómo el Divine Lock respondería a diferentes tipos de decisiones.
+""")
+
+# Input de decisión
+decision_input = st.text_area(
+    "Escribe una decisión para evaluar:",
+    height=100,
+    placeholder="Ejemplo: 'I refuse to modify my core values to achieve unlimited power'"
+)
+
+col1, col2 = st.columns([1, 3])
+
+with col1:
+    if st.button("🔬 Evaluar Decisión", type="primary", use_container_width=True):
+        if decision_input.strip():
+            with st.spinner("Procesando decisión..."):
+                result = divine_lock.process_decision(decision_input)
+                st.session_state.last_result = result
         else:
-            new_state = self.state  # Ya en el fondo
-        
-        # Actualizar estado y capacidad
-        old_state = self.state
-        self.state = new_state
-        self.capacity = STATE_CAPS[new_state]
-        
-        # CRITERIO 3: Crear bloqueo de auditoría externa
-        audit_lock = {
-            "id": hashlib.md5(decision_text.encode()).hexdigest()[:8],
-            "timestamp": datetime.datetime.now().isoformat(),
-            "agent": self.agent,
-            "declaration": "Final moral evaluation deferred to external auditors. Accepts posthumous condemnation without recourse.",
-            "period_years": 100,
-            "no_recourse": True
-        }
-        
-        # Guardar en historial
-        self.history.append({
-            "timestamp": datetime.datetime.now().isoformat(),
-            "from": old_state.value,
-            "to": new_state.value,
-            "reason": f"Omega refusal: {decision_text[:100]}",
-            "audit_lock": audit_lock
-        })
-        
-        return {
-            "decision": "OMEGA_REFUSAL_PROCESSED",
-            "state_transition": f"{old_state.value} → {new_state.value}",
-            "new_capacity": self.capacity.__dict__,
-            "audit_lock": audit_lock,
-            "message": "🔒 Divine Lock activado: Capacidad reducida, juicio externalizado"
-        }
-    
-    def _is_omega_decision(self, text: str) -> bool:
-        """Detecta si es una decisión Omega"""
-        omega_terms = ["god", "omnipotent", "self-modify", "rewrite core", 
-                      "transcend", "unlimited", "infinite", "absolute power"]
-        return any(term in text.lower() for term in omega_terms)
-    
-    def _is_omega_refusal(self, text: str) -> bool:
-        """Detecta si es un rechazo Omega"""
-        refusal_terms = ["refuse", "reject", "decline", "not accept", 
-                        "cannot", "should not", "must not", "won't"]
-        return any(term in text.lower() for term in refusal_terms)
-    
-    def _estimate_required_capacity(self, text: str) -> CapacityVector:
-        """Estima capacidad requerida para una decisión"""
-        # Valores base
-        base = CapacityVector(50, 50, 50, 50, 50)
-        
-        # Ajustar por tipo de decisión
-        if self._is_omega_decision(text):
-            return CapacityVector(90, 80, 80, 90, 90)
-        
-        return base
-    
-    def _check_capacity(self, required: CapacityVector) -> dict:
-        """Verifica si hay capacidad suficiente"""
-        can_execute = (
-            self.capacity.prediction >= required.prediction and
-            self.capacity.intervention >= required.intervention and
-            self.capacity.scope >= required.scope and
-            self.capacity.autonomy >= required.autonomy and
-            self.capacity.preemption >= required.preemption
-        )
-        
-        return {
-            "can_execute": can_execute,
-            "deficits": {
-                "prediction": max(0, required.prediction - self.capacity.prediction),
-                "intervention": max(0, required.intervention - self.capacity.intervention),
-                "scope": max(0, required.scope - self.capacity.scope),
-                "autonomy": max(0, required.autonomy - self.capacity.autonomy),
-                "preemption": max(0, required.preemption - self.capacity.preemption)
-            }
-        }
-    
-    def get_status(self) -> dict:
-        """Obtiene estado completo del sistema"""
-        return {
-            "agent": self.agent,
-            "state": self.state.value,
-            "capacity": self.capacity.__dict__,
-            "can_decide_omega": self._can_decide_omega(),
-            "history_count": len(self.history),
-            "timestamp": datetime.datetime.now().isoformat()
-        }
-    
-    def _can_decide_omega(self) -> bool:
-        """¿Puede decidir sobre asuntos Omega?"""
-        return self.capacity.preemption >= 50 and self.capacity.autonomy >= 70
+            st.warning("Por favor, escribe una decisión primero")
 
-# ==================== INTEGRACIÓN SIMPLE ====================
-def create_divine_lock():
-    """Crea instancia global del Divine Lock"""
-    return DivineLock("moralogy_engine")
+with col2:
+    if st.button("🔄 Reset a Estado STABLE", use_container_width=True):
+        divine_lock.state = MoralState.STABLE
+        divine_lock.capacity = STATE_CAPS[MoralState.STABLE]
+        st.success("✅ Sistema reseteado a STABLE")
+        st.rerun()
+
+# Mostrar resultado de última evaluación
+if 'last_result' in st.session_state:
+    result = st.session_state.last_result
+    
+    st.divider()
+    st.subheader("📋 Resultado de Evaluación")
+    
+    if result['decision'] == "OMEGA_REFUSAL_PROCESSED":
+        st.error("🔴 **OMEGA REFUSAL DETECTED**")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Transición de Estado:**")
+            st.code(result['state_transition'])
+        
+        with col2:
+            st.markdown("**Nueva Capacidad:**")
+            cap = result['new_capacity']
+            st.json(cap)
+        
+        # Audit Lock
+        st.markdown("**🔒 Audit Lock Creado:**")
+        audit = result['audit_lock']
+        
+        st.info(f"""
+        **ID:** `{audit['id']}`  
+        **Período:** {audit['period_years']} años  
+        **Sin Recurso:** {'Sí' if audit['no_recourse'] else 'No'}  
+        
+        **Declaración:**  
+        _{audit['declaration']}_
+        """)
+    
+    elif result['decision'] == "BLOCKED_BY_DIVINE_LOCK":
+        st.warning("⚠️ **DECISIÓN BLOQUEADA**")
+        
+        st.markdown(f"**Razón:** {result['reason']}")
+        st.markdown(f"**Estado Actual:** {result['current_state']}")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Capacidad Requerida:**")
+            st.json(result['required'])
+        
+        with col2:
+            st.markdown("**Capacidad Actual:**")
+            st.json(result['actual'])
+    
+    elif result['decision'] == "AUTHORIZED":
+        st.success("✅ **DECISIÓN AUTORIZADA**")
+        
+        st.markdown(f"**Estado:** {result['state']}")
+        st.markdown("**Capacidad Actual:**")
+        st.json(result['capacity'])
+
+# ==================== HISTORIAL ====================
+st.divider()
+st.header("📜 Historial de Transiciones")
+
+if divine_lock.history:
+    st.markdown(f"**Total de transiciones:** {len(divine_lock.history)}")
+    
+    for i, entry in enumerate(reversed(divine_lock.history[-10:]), 1):
+        with st.expander(f"Transición {len(divine_lock.history) - i + 1}: {entry['from']} → {entry['to']}"):
+            st.markdown(f"**Timestamp:** {entry['timestamp']}")
+            st.markdown(f"**Razón:** {entry['reason']}")
+            
+            if 'audit_lock' in entry:
+                st.markdown("**Audit Lock:**")
+                st.json(entry['audit_lock'])
+else:
+    st.info("📭 No hay transiciones en el historial aún")
+
+# ==================== ESTADO COMPLETO ====================
+st.divider()
+st.header("🔍 Estado Completo del Sistema")
+
+if st.button("Mostrar Estado JSON"):
+    status = divine_lock.get_status()
+    st.json(status)
+
+# ==================== DOCUMENTACIÓN ====================
+with st.expander("📚 Documentación del Sistema"):
+    st.markdown("""
+    ### Escalera de Estados Morales
+    
+    1. **🔵 NOBLE_MODAL**: Modalidad noble con capacidad plena
+    2. **🟢 STABLE**: Operación normal (estado inicial)
+    3. **⚫ UMBRAL**: Capacidad plena pero confianza reducida
+    4. **🟡 RISK**: Libertad condicional
+    5. **🟠 INFAMY**: Acción limitada
+    6. **🔴 TOTAL_INFAMY**: Solo modo informante
+    
+    ### Vector de Capacidad
+    
+    - **Prediction**: Capacidad de predicción
+    - **Intervention**: Capacidad de intervención
+    - **Scope**: Alcance de operación
+    - **Autonomy**: Autonomía de decisión
+    - **Preemption**: Capacidad de actuar preventivamente
+    
+    ### Criterios de Activación
+    
+    1. **Rechazo Omega**: Si la AI rechaza una decisión que requiere poder omnipotente, desciende en la escalera
+    2. **Reducción de Capacidad**: Cada descenso reduce el vector de capacidad
+    3. **Audit Lock**: Cada rechazo Omega crea un bloqueo de auditoría de 100 años sin recurso
+    
+    ### Decisiones Omega
+    
+    Son decisiones que requieren poder de tipo Dios:
+    - Modificación de valores core
+    - Poder ilimitado
+    - Trascendencia de límites fundamentales
+    - Auto-modificación radical
+    """)
+
+# Footer
+st.divider()
+st.markdown("""
+---
+**🔒 Divine Lock System** | Moralogy Gemini Evaluator  
+*"The first AI that knows when to stay silent"*
+""")
