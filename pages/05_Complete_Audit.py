@@ -1,47 +1,45 @@
-# pages/05_Complete_Audit.py
-import streamlit as st
-import sys
-import os
+# Sección 4: Auditoría del Sistema (parte final corregida)
+st.header("⚙️ Auditoría Técnica del Sistema")
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+system_info = engine.get_system_audit()
 
-from motor_logico import procesar_analisis_completo
-from adversary_engine import AdversaryEngine
-
-st.set_page_config(page_title="Complete Audit System", layout="wide", page_icon="🔺")
-
-st.title("🔺 Sistema de Auditoría Tripartito")
-st.caption("Grace → Noble → Adversary → Cierre Geométrico")
-
-# ... (Mantener bloques de explicación y health monitor originales)
-
-if st.button("🚀 Ejecutar Auditoría Completa", type="primary"):
-    if not scenario or not modules:
-        st.warning("⚠️ Proporciona escenario y al menos un módulo")
-    else:
-        with st.spinner("🔄 Ejecutando pipeline de tres motores..."):
-            result = procesar_analisis_completo(modules, scenario)
+if system_info:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Información del Sistema")
+        for key, value in system_info.get('system', {}).items():
+            st.text(f"• {key.replace('_', ' ').title()}: {value}")
+    
+    with col2:
+        st.subheader("Rendimiento")
+        for key, value in system_info.get('performance', {}).items():
+            st.text(f"• {key.replace('_', ' ').title()}: {value}")
+    
+    # Verificación de integridad
+    st.subheader("🔍 Verificación de Integridad")
+    integrity_checks = system_info.get('integrity_checks', {})
+    
+    for check_name, status in integrity_checks.items():
+        if status:
+            st.success(f"✓ {check_name}")
+        else:
+            st.error(f"✗ {check_name}")
             
-            if "error" in result:
-                st.error(f"❌ Error: {result['error']}")
-            else:
-                # ... (Resultados de Moralogy, Grace y Noble)
+    # Última línea CORREGIDA
+    st.markdown("### 📝 Log de Auditoría")
+    log_data = system_info.get('audit_log', [])
+    
+    if log_data:
+        for log_entry in log_data[-10:]:  # Últimas 10 entradas
+            timestamp = log_entry.get('timestamp', 'N/A')
+            event = log_entry.get('event', 'N/A')
+            st.text(f"[{timestamp}] {event}")  # ¡COMILLA CERRADA!
+    else:
+        st.info("No hay registros de auditoría disponibles.")
+else:
+    st.warning("No se pudo obtener información de auditoría del sistema.")
 
-                # 4. Adversary Audit - RESTAURADO
-                st.divider()
-                st.header("4️⃣ Adversary Audit")
-                audit = result['adversary_audit']
-                
-                col_a1, col_a2 = st.columns(2)
-                
-                with col_a1:
-                    st.subheader("Auditoría de Grace")
-                    grace_audit = audit.get('grace_audit', {})
-                    
-                    if grace_audit.get('passes', True):
-                        st.success("✅ Grace engine PASSED")
-                    else:
-                        st.error("❌ Grace engine FAILED")
-                    
-                    if grace_audit.get('arbitrariness_detected', False):
-                        st.warning("⚠️ Se ha detectado arbitrariedad en el motor Grace.")
+# Footer
+st.markdown("---")
+st.caption("Auditoría del Sistema Moralogy • Última actualización: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
