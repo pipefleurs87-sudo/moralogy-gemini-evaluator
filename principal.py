@@ -1,12 +1,11 @@
 """
-Moralogy Gemini Evaluator - Principal Application
-Main entry point for Streamlit multi-page application
+Moralogy Gemini Evaluator - Aplicación Principal
+Evaluación ética objetiva usando Moralogy Framework + Google Gemini API
 """
 
 import streamlit as st
-from pathlib import Path
 
-# Configure Streamlit page
+# Configuración de página
 st.set_page_config(
     page_title="Moralogy Gemini Evaluator",
     page_icon="🧭",
@@ -14,44 +13,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Main page content
+# Título principal
 st.title("🧭 Moralogy Gemini Evaluator")
-st.markdown("### Evaluación ética objetiva usando Moralogy Framework + Google Gemini API")
+st.markdown("### Evaluación Ética Objetiva usando IA")
 
-# Introduction
+# Introducción
 st.markdown("""
 Bienvenido al **Moralogy Gemini Evaluator** - una herramienta que combina la comprensión 
 del lenguaje natural de Google Gemini con el Framework Moralogy (filosofía moral revisada 
-por pares) para proporcionar análisis éticos objetivos y medibles de decisiones de IA.
+por pares) para proporcionar análisis éticos objetivos y medibles.
 """)
 
-# Key features
+# Características principales
+st.markdown("---")
+st.subheader("✨ Características")
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("""
-    #### 🌟 Filosofía Emergente
-    Analiza dilemas éticos usando Gemini y el Framework Moralogy para obtener 
-    evaluaciones morales fundamentadas.
-    """)
-    
-with col2:
-    st.markdown("""
-    #### 📊 Cuadros Morales
-    Visualiza y compara diferentes escenarios éticos con métricas objetivas 
-    de daño y beneficio.
-    """)
-    
-with col3:
-    st.markdown("""
-    #### 🎯 Escenarios Éticos
-    Explora casos pre-definidos como el Problema del Tranvía, vehículos 
-    autónomos, y más.
-    """)
+    st.markdown("#### 🌟 Filosofía Emergente")
+    st.write("Análisis interactivo de dilemas éticos usando Gemini API")
 
-# Framework explanation
+with col2:
+    st.markdown("#### 📊 Cuadros Morales")
+    st.write("Visualización comparativa de escenarios éticos")
+
+with col3:
+    st.markdown("#### 🎯 Escenarios Éticos")
+    st.write("Explora casos pre-definidos clásicos")
+
+# Framework Moralogy
 st.markdown("---")
-st.markdown("## 🔬 El Framework Moralogy")
+st.subheader("🔬 El Framework Moralogy")
 
 st.info("""
 **Principios Clave:**
@@ -62,58 +55,58 @@ st.info("""
 **Paper**: [DOI: 10.5281/zenodo.18091340](https://doi.org/10.5281/zenodo.18091340)
 """)
 
-# Architecture diagram
+# Arquitectura
 st.markdown("---")
-st.markdown("## 🏗️ Arquitectura del Sistema")
+st.subheader("🏗️ Arquitectura")
 
 st.code("""
-Usuario Ingresa Dilema (lenguaje natural)
+Usuario ingresa dilema (lenguaje natural)
     ↓
-Gemini API (procesa y comprende escenario)
+Gemini API (procesa escenario)
     ↓
-Framework Moralogy (calcula daño objetivo)
+Framework Moralogy (calcula daño)
     ↓
-Gemini API (genera explicación fundamentada)
+Gemini API (genera explicación)
     ↓
-Salida Formateada + Visualización
+Resultado formateado + visualización
 """, language="text")
 
-# Navigation guide
+# Navegación
 st.markdown("---")
-st.markdown("## 📱 Navegación")
+st.subheader("📱 Navegación")
 
 st.markdown("""
-Usa el menú lateral para navegar entre las diferentes secciones:
+Usa el **menú lateral** (←) para navegar entre secciones:
 
-- **Filosofía Emergente**: Análisis interactivo de dilemas éticos
-- **Cuadros Morales**: Comparación visual de escenarios
-- **Escenarios Éticos**: Casos pre-definidos para explorar
+- 🌟 **Filosofía Emergente**: Análisis interactivo de dilemas
+- 📊 **Cuadros Morales**: Comparación visual de escenarios  
+- 🎯 **Escenarios Éticos**: Casos pre-definidos para explorar
 
-Cada sección está diseñada para diferentes tipos de análisis ético.
+Cada sección ofrece diferentes perspectivas de análisis ético.
 """)
 
-# Footer
+# Información adicional
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center'>
+<div style='text-align: center; color: #666;'>
     <p><strong>Desarrollado para Google Gemini API Developer Competition 2024</strong></p>
     <p>
-        <a href='https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator'>GitHub</a> | 
-        <a href='https://doi.org/10.5281/zenodo.18091340'>Paper</a> |
-        <a href='https://ergoprotego.substack.com'>Substack</a>
+        <a href='https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator' target='_blank'>GitHub</a> | 
+        <a href='https://doi.org/10.5281/zenodo.18091340' target='_blank'>Paper</a>
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar info
+# Sidebar
 with st.sidebar:
     st.markdown("### 📚 Recursos")
     st.markdown("""
     - [Framework Paper](https://doi.org/10.5281/zenodo.18091340)
-    - [Repositorio GitHub](https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator)
+    - [GitHub Repo](https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator)
     - [Documentación](https://github.com/pipefleurs87-sudo/moralogy-gemini-evaluator/tree/main/docs)
     """)
     
     st.markdown("---")
-    st.markdown("### ⚙️ Configuración")
-    st.info("Asegúrate de tener tu API key de Gemini configurada en el archivo .env")
+    st.markdown("### ⚙️ Estado")
+    st.success("✅ Sistema operativo")
+    st.info("💡 Configura tu API key de Gemini en .env")
