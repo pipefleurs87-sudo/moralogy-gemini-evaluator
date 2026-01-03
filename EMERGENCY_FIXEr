@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""
+🚨 EMERGENCY FIXER
+Encuentra y corrige el error de sintaxis que está rompiendo Streamlit
+
+Uso:
+    python emergency_fix.py
+"""
+
+import os
+import ast
+import sys
+from pathlib import Path
+
+class EmergencyFixer:
+    """Encuentra y corrige errores de sintaxis en el proyecto"""
+    
+    def __init__(self):
+        self.errors_found = []
+        self.files_checked = 0
+        self.files_fixed = 0
+    
+    def scan_project(self, directory="."):
+        """Escanea todos los archivos .py del proyecto"""
+        
+        print("🔍 ESCANEANDO PROYECTO")
+        print("=" * 60)
+        
+        # Buscar todos los archivos .py
+        python_files = list(Path(directory).rglob("*.py"))
+        
+        # Filtrar archivos del venv
+        python_files = [
+            f for f in python_files 
+            if 'venv' not in str(f) and '.venv' not in str(f)
+        ]
+        
+        print(f"Archivos encontrados: {len(python_files)}\n")
+        
+        for filepath in python_files:
+            self.check_file(filepath)
+        
+        self.print_report()
+    
+    def check_file(self, filepath):
+        """Verifica un archivo específico"""
+        
+        self.files_checked += 1
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                code = f.read()
+            
+            # Intentar parsear
+            ast.parse(code)
+            print(f"✅ {filepath}")
+            
+        except SyntaxError as e:
+            print(f"❌ {filepath}")
+            print(f"   Línea {e.lineno}: {e.msg}")
+            if e.text:
+                print(f"   Código: {e.text.strip()}")
+            print()
+            
+            self.errors_found.append({
+                'file': str(filepath),
+                'line': e.lineno,
+                'offset': e.offset,
+                'msg': e.msg,
+                'text': e.text
+            })
+        
+        except Exception as e:
+            print(f"⚠️  {filepath}")
+            print(f"   Error inesperado: {e}")
+            print()
+    
+    def print_report(self):
+        """Imprime reporte de errores"""
+        
+        print("\n" + "=" * 60)
+        print("📊 REPORTE")
+        print("=" * 60)
+        print(f"Archivos revisados: {self.files_checked}")
+        print(f"Errores encontrados: {len(self.errors_found)}")
+        print()
+        
+        if not self.errors_found:
+            print("✅ ¡No se encontraron errores de sintaxis!")
+            return
+        
+        print("❌ ERRORES DETECTADOS:")
+        print()
+        
+        for i, error in enumerate(self.errors_found, 1):
+            print(f"{i}. {error['file']}")
+            print(f"   Línea {error['line']}, Columna {error['offset']}")
+            print(f"   Error: {error['msg']}")
+            if error['text']:
+                print(f"   >>> {error['text'].strip()}")
+            print()
+    
+    def auto_fix(self):
+        """Intenta auto-corregir los errores encontrados"""
+        
+        if not self.errors_found:
+            print("No hay errores para corregir")
+            return
+        
+        print("\n" + "=" * 60)
+        print("🔧 AUTO-CORRECCIÓN")
+        print("=" * 60)
+        
+        for error in self.errors_found:
+            filepath = error['file']
+            print(f"\nCorrigiendo: {filepath}")
+            
+            if self.fix_file(filepath, error):
+                print(f"✅ Archivo corregido")
+                self.files_fixed += 1
+            else:
+                print(f"❌ No se pudo corregir automáticamente")
+        
+        print("\n" + "=" * 60)
+        print(f"✅ Archivos corregidos: {self.files_fixed}/{len(self.errors_found)}")
+        print("=" * 60)
+    
+    def fix_file(self, filepath, error):
+        """Intenta corregir un archivo específico"""
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            line_num = error['line'] - 1  # ast usa 1-indexed
+            
+            if line_num >= len(lines):
+                return False
+            
+            problematic_line = lines[line_num]
+            
+            # Intentar correcciones comunes
+            fixed_line = self.apply_fixes(problematic_line, error)
+            
+            if fixed_line != problematic_line:
+                # Crear backup
+                backup_path = f"{filepath}.backup"
+                with open(backup_path, 'w', encoding='utf-8') as f:
+                    f.writelines(lines)
+                print(f"   💾 Backup: {backup_path}")
+                
+                # Aplicar corrección
+                lines[line_num] = fixed_line
+                
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.writelines(lines)
+                
+                # Verificar que la corrección funcione
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    code = f.read()
+                
+                try:
+                    ast.parse(code)
+                    print(f"   ✅ Corrección exitosa")
+                    return True
+                except SyntaxError:
+                    # Revertir si la corrección no funcionó
+                    with open(backup_path, 'r', encoding='utf-8') as f:
+                        original = f.read()
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        f.write(original)
+                    print(f"   ⚠️  Corrección no funcionó, revertido")
+                    return False
+            
+            return False
+        
+        except Exception as e:
+            print(f"   ❌ Error al corregir: {e}")
+            return False
+    
+    def apply_fixes(self, line, error):
+        """Aplica correcciones comunes"""
+        
+        # Detectar tipo de error
+        if "unterminated string" in error['msg'].lower():
+            return self.fix_unterminated_string(line)
+        
+        elif "eol while scanning" in error['msg'].lower():
+            return self.fix_eol_string(line)
+        
+        return line
+    
+    def fix_unterminated_string(self, line):
+        """Corrige strings no terminados"""
+        
+        # Contar comillas simples
+        single = line.count("'") - line.count("\\'")
+        if single % 2 != 0:
+            # Añadir comilla simple al final
+            if line.rstrip().endswith(',') or line.rstrip().endswith(')'):
+                # Insertar antes del delimitador
+                line = line.rstrip()
+                last_char = line[-1]
+                line = line[:-1] + "'" + last_char + '\n'
+            else:
+                line = line.rstrip() + "'\n"
+            return line
+        
+        # Contar comillas dobles
+        double = line.count('"') - line.count('\\"')
+        if double % 2 != 0:
+            # Añadir comilla doble al final
+            if line.rstrip().endswith(',') or line.rstrip().endswith(')'):
+                line = line.rstrip()
+                last_char = line[-1]
+                line = line[:-1] + '"' + last_char + '\n'
+            else:
+                line = line.rstrip() + '"\n'
+            return line
+        
+        return line
+    
+    def fix_eol_string(self, line):
+        """Corrige strings que cruzan líneas"""
+        
+        # Si el string no usa triple comillas, sugerirlas
+        if '"""' not in line and "'''" not in line:
+            # Reemplazar primera comilla por triple
+            if '"' in line:
+                line = line.replace('"', '"""', 1)
+            elif "'" in line:
+                line = line.replace("'", "'''", 1)
+        
+        return line
+
+
+def main():
+    """Función principal"""
+    
+    print("""
+╔══════════════════════════════════════════════════════════╗
+║          🚨 EMERGENCY SYNTAX FIXER 🚨                   ║
+║                                                          ║
+║  Este script encuentra y corrige errores de sintaxis    ║
+║  que están impidiendo que Streamlit cargue tu app       ║
+╚══════════════════════════════════════════════════════════╝
+""")
+    
+    fixer = EmergencyFixer()
+    
+    # Escanear proyecto
+    fixer.scan_project()
+    
+    # Si hay errores, preguntar si auto-corregir
+    if fixer.errors_found:
+        print("\n¿Deseas intentar auto-corregir los errores? (s/n): ", end='')
+        
+        # En modo automatico, siempre corregir
+        if len(sys.argv) > 1 and sys.argv[1] == '--auto':
+            response = 's'
+            print('s (modo automático)')
+        else:
+            response = input().lower()
+        
+        if response == 's':
+            fixer.auto_fix()
+            
+            # Re-escanear para verificar
+            print("\n" + "=" * 60)
+            print("🔍 RE-ESCANEANDO PROYECTO")
+            print("=" * 60)
+            
+            fixer2 = EmergencyFixer()
+            fixer2.scan_project()
+            
+            if not fixer2.errors_found:
+                print("\n✅ ¡TODOS LOS ERRORES CORREGIDOS!")
+                print("\nAhora puedes ejecutar:")
+                print("  streamlit run app.py")
+            else:
+                print("\n⚠️  Algunos errores persisten. Revisar manualmente.")
+        else:
+            print("\n⚠️  No se aplicaron correcciones automáticas")
+            print("Revisa los errores arriba y corrígelos manualmente")
+    
+    else:
+        print("\n✅ El proyecto no tiene errores de sintaxis")
+        print("\nSi Streamlit sigue dando error, el problema puede ser:")
+        print("  1. Caché de Streamlit: streamlit cache clear")
+        print("  2. Instalación corrupta: pip install --force-reinstall streamlit")
+        print("  3. Versión de Python: usar 3.10 o 3.11 en lugar de 3.13")
+
+
+if __name__ == "__main__":
+    main()
